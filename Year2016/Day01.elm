@@ -1,16 +1,18 @@
 module Year2016.Day01 exposing (..)
 
-import Advent exposing (Test)
+import Advent exposing (Test1, Test2)
 import String
 
 
-main : Program Never Output Never
+main : Program Never ( Output1, Output2 ) Never
 main =
     Advent.program
         { input = input
         , parse = parse
-        , compute = compute
-        , tests = tests
+        , compute1 = compute1
+        , compute2 = compute2
+        , tests1 = tests1
+        , tests2 = tests2
         }
 
 
@@ -104,8 +106,12 @@ distance { x, y } =
     abs x + abs y
 
 
-type alias Output =
+type alias Output1 =
     Distance
+
+
+type alias Output2 =
+    Maybe Distance
 
 
 input : String
@@ -141,8 +147,8 @@ parseStep string =
             |> Result.withDefault (Step Left 0)
 
 
-compute : Input -> Output
-compute input =
+compute1 : Input -> Output1
+compute1 input =
     input
         |> List.foldl
             (\{ rotation, amount } ( orientation, position ) ->
@@ -160,22 +166,58 @@ compute input =
         |> distance
 
 
-tests : List (Test Input Output)
-tests =
-    [ Test "example 1"
+moves : Orientation -> Int -> Position -> List Position
+moves orientation amount position =
+    ( orientation, 1 )
+        |> List.repeat amount
+        |> List.scanl (\( orientation, amount ) position -> move orientation amount position) position
+        |> List.tail
+        |> Maybe.withDefault []
+
+
+compute2 : Input -> Output2
+compute2 input =
+    let
+        ( history, _, _ ) =
+            input
+                |> List.foldl
+                    (\{ rotation, amount } ( history, orientation, position ) ->
+                        let
+                            newOrientation =
+                                orientation |> rotate rotation
+
+                            newHistory =
+                                history ++ moves newOrientation amount position
+
+                            newPosition =
+                                position |> move newOrientation amount
+                        in
+                            ( newHistory, newOrientation, newPosition )
+                    )
+                    ( [ initialPosition ], North, initialPosition )
+    in
+        history
+            |> List.filter (\position -> (history |> List.filter (\x -> x == position) |> List.length) > 1)
+            |> List.head
+            |> Maybe.map distance
+
+
+tests1 : List (Test1 Input Output1)
+tests1 =
+    [ Test1 "example 1"
         "R2, L3"
         [ Step Right 2
         , Step Left 3
         ]
         5
-    , Test "example 2"
+    , Test1 "example 2"
         "R2, R2, R2"
         [ Step Right 2
         , Step Right 2
         , Step Right 2
         ]
         2
-    , Test "example 3"
+    , Test1 "example 3"
         "R5, L5, R5, R3"
         [ Step Right 5
         , Step Left 5
@@ -183,4 +225,12 @@ tests =
         , Step Right 3
         ]
         12
+    ]
+
+
+tests2 : List (Test2 Output2)
+tests2 =
+    [ Test2 "example 1"
+        "R8, R4, R4, R8"
+        (Just 4)
     ]
