@@ -1,6 +1,6 @@
 module Year201X.DayXX exposing (..)
 
-import Advent exposing (Test)
+import Advent exposing (Test1, Test2)
 
 
 main : Program Never ( Output1, Output2 ) Never
@@ -49,7 +49,7 @@ compute2 input =
 
 tests1 : List (Test1 Input Output1)
 tests1 =
-    [ Test "example"
+    [ Test1 "example"
         "input"
         "parsed input"
         "output 1"
@@ -58,7 +58,7 @@ tests1 =
 
 tests2 : List (Test2 Output2)
 tests2 =
-    [ Test "example"
+    [ Test2 "example"
         "input"
         "output 2"
     ]
