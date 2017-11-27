@@ -1,4 +1,4 @@
-module Advent exposing (program, Test(..))
+module Advent exposing (program, Test)
 
 
 program :
@@ -12,9 +12,15 @@ program { input, parse, compute, tests } =
     Platform.program
         { init =
             let
-                results =
+                testResults =
                     tests
                         |> List.map (runTest parse compute)
+
+                announce testResults =
+                    Debug.log "Tests passed!" ()
+
+                _ =
+                    announce testResults
             in
                 ( input |> parse |> compute |> Debug.log "Output"
                 , Cmd.none
@@ -24,30 +30,26 @@ program { input, parse, compute, tests } =
         }
 
 
-type Test input output
-    = ParseTest String String input
-    | ComputeTest String input output
+type alias Test input output =
+    { description : String
+    , input : String
+    , expectedParsedInput : input
+    , expectedOutput : output
+    }
 
 
 runTest : (String -> input) -> (input -> output) -> Test input output -> ()
-runTest parse compute test =
-    case test of
-        ParseTest description input expectedOutput ->
-            let
-                output =
-                    parse input
-            in
-                if output /= expectedOutput then
-                    Debug.crash <| "\nParse test \"" ++ description ++ "\" failed:\n  input:    " ++ toString input ++ "\n  expected: " ++ toString expectedOutput ++ "\n  actual:   " ++ toString output ++ "\n"
-                else
-                    ()
+runTest parse compute { description, input, expectedParsedInput, expectedOutput } =
+    let
+        parsedInput =
+            parse input
 
-        ComputeTest description input expectedOutput ->
-            let
-                output =
-                    compute input
-            in
-                if output /= expectedOutput then
-                    Debug.crash <| "\nCompute test \"" ++ description ++ "\" failed:\n  input:    " ++ toString input ++ "\n  expected: " ++ toString expectedOutput ++ "\n  actual:   " ++ toString output ++ "\n"
-                else
-                    ()
+        output =
+            compute parsedInput
+    in
+        if parsedInput /= expectedParsedInput then
+            Debug.crash <| "\nTest \"" ++ description ++ "\" failed on `parse`:\n  input:    " ++ toString input ++ "\n  expected: " ++ toString expectedParsedInput ++ "\n  actual:   " ++ toString parsedInput ++ "\n"
+        else if output /= expectedOutput then
+            Debug.crash <| "\nTest \"" ++ description ++ "\" failed on `compute`:\n  input:    " ++ toString parsedInput ++ "\n  expected: " ++ toString expectedOutput ++ "\n  actual:   " ++ toString output ++ "\n"
+        else
+            ()

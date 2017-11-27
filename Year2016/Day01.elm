@@ -1,6 +1,6 @@
 module Year2016.Day01 exposing (..)
 
-import Advent exposing (Test(..))
+import Advent exposing (Test)
 import String
 
 
@@ -18,17 +18,32 @@ type alias Input =
     List Step
 
 
-type Step
-    = Left Int
-    | Right Int
+type alias Step =
+    { rotation : Rotation
+    , amount : Int
+    }
+
+
+type Rotation
+    = Left
+    | Right
 
 
 type alias Position =
-    { north : Int, east : Int }
+    { x : Int
+    , y : Int
+    }
 
 
 type alias Distance =
     Int
+
+
+type Orientation
+    = North
+    | East
+    | South
+    | West
 
 
 initialPosition : Position
@@ -36,9 +51,57 @@ initialPosition =
     Position 0 0
 
 
+rotate : Rotation -> Orientation -> Orientation
+rotate rotation orientation =
+    case rotation of
+        Left ->
+            case orientation of
+                North ->
+                    West
+
+                West ->
+                    South
+
+                South ->
+                    East
+
+                East ->
+                    North
+
+        Right ->
+            case orientation of
+                North ->
+                    East
+
+                East ->
+                    South
+
+                South ->
+                    West
+
+                West ->
+                    North
+
+
+move : Orientation -> Int -> Position -> Position
+move orientation amount { x, y } =
+    case orientation of
+        North ->
+            Position x (y + amount)
+
+        East ->
+            Position (x + amount) y
+
+        South ->
+            Position x (y - amount)
+
+        West ->
+            Position (x - amount) y
+
+
 distance : Position -> Distance
-distance { north, east } =
-    abs north + abs east
+distance { x, y } =
+    abs x + abs y
 
 
 type alias Output =
@@ -60,7 +123,7 @@ parse string =
 parseStep : String -> Step
 parseStep string =
     let
-        ( stepType, amountString ) =
+        ( rotation, amountString ) =
             case String.uncons string of
                 Just ( 'L', amountString ) ->
                     ( Left, amountString )
@@ -73,22 +136,43 @@ parseStep string =
     in
         amountString
             |> String.toInt
-            |> Result.map (\amount -> stepType amount)
+            |> Result.map (\amount -> Step rotation amount)
             |> Result.mapError (\x -> Debug.crash "Wrong input!")
-            |> Result.withDefault (Left 0)
+            |> Result.withDefault (Step Left 0)
 
 
 compute : Input -> Output
 compute input =
-    10
+    input
+        |> List.foldl
+            (\{ rotation, amount } ( orientation, position ) ->
+                let
+                    newOrientation =
+                        orientation |> rotate rotation
+
+                    newPosition =
+                        position |> move orientation amount
+                in
+                    ( newOrientation, newPosition )
+            )
+            ( North, initialPosition )
+        |> Tuple.second
+        |> distance
 
 
 tests : List (Test Input Output)
 tests =
-    [ ParseTest "example 1"
+    [ Test "example 1"
         "R2, L3"
-        [ Right 2, Left 3 ]
-    , ComputeTest "example 1"
-        [ Right 2, Left 3 ]
+        [ Step Right 2
+        , Step Left 3
+        ]
         5
+    , Test "example 2"
+        "R2, R2, R2"
+        [ Step Right 2
+        , Step Right 2
+        , Step Right 2
+        ]
+        2
     ]
