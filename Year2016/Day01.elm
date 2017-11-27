@@ -1,6 +1,6 @@
 module Year2016.Day01 exposing (..)
 
-import Advent exposing (Test1, Test2)
+import Advent exposing (Test)
 import String
 
 
@@ -8,7 +8,8 @@ main : Program Never ( Output1, Output2 ) Never
 main =
     Advent.program
         { input = input
-        , parse = parse
+        , parse1 = parse
+        , parse2 = parse
         , compute1 = compute1
         , compute2 = compute2
         , tests1 = tests1
@@ -202,22 +203,22 @@ compute2 input =
             |> Maybe.map distance
 
 
-tests1 : List (Test1 Input Output1)
+tests1 : List (Test Input Output1)
 tests1 =
-    [ Test1 "example 1"
+    [ Test "example 1"
         "R2, L3"
         [ Step Right 2
         , Step Left 3
         ]
         5
-    , Test1 "example 2"
+    , Test "example 2"
         "R2, R2, R2"
         [ Step Right 2
         , Step Right 2
         , Step Right 2
         ]
         2
-    , Test1 "example 3"
+    , Test "example 3"
         "R5, L5, R5, R3"
         [ Step Right 5
         , Step Left 5
@@ -228,9 +229,14 @@ tests1 =
     ]
 
 
-tests2 : List (Test2 Output2)
+tests2 : List (Test Input Output2)
 tests2 =
-    [ Test2 "example 1"
+    [ Test "example 1"
         "R8, R4, R4, R8"
+        [ Step Right 8
+        , Step Right 4
+        , Step Right 4
+        , Step Right 8
+        ]
         (Just 4)
     ]

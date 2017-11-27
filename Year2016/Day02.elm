@@ -1,13 +1,14 @@
 module Year2016.Day02 exposing (..)
 
-import Advent exposing (Test1, Test2)
+import Advent exposing (Test, Test)
 
 
 main : Program Never ( Output1, Output2 ) Never
 main =
     Advent.program
         { input = input
-        , parse = parse
+        , parse1 = parse
+        , parse2 = parse
         , compute1 = compute1
         , compute2 = compute2
         , tests1 = tests1
@@ -447,18 +448,19 @@ processRow2 directions digit =
         |> List.foldl nextDigit2 digit
 
 
-tests1 : List (Test1 Input Output1)
+tests1 : List (Test Input Output1)
 tests1 =
-    [ Test1 "example"
+    [ Test "example"
         "ULL\nRRDDD\nLURDL\nUUUUD"
         [ [ Up, Left, Left ], [ Right, Right, Down, Down, Down ], [ Left, Up, Right, Down, Left ], [ Up, Up, Up, Up, Down ] ]
         [ D1, D9, D8, D5 ]
     ]
 
 
-tests2 : List (Test2 Output2)
+tests2 : List (Test Input Output2)
 tests2 =
-    [ Test2 "example"
+    [ Test "example"
         "ULL\nRRDDD\nLURDL\nUUUUD"
+        [ [ Up, Left, Left ], [ Right, Right, Down, Down, Down ], [ Left, Up, Right, Down, Left ], [ Up, Up, Up, Up, Down ] ]
         [ Dd5, DdD, DdB, Dd3 ]
     ]
