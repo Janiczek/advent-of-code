@@ -47,19 +47,19 @@ parse2 input =
     "parsed " ++ input ++ " 2"
 
 
-compute1 : Input -> Output1
+compute1 : Input1 -> Output1
 compute1 input =
     "output 1"
 
 
-compute2 : Input -> Output2
+compute2 : Input2 -> Output2
 compute2 input =
     "output 2"
 
 
 tests1 : List (Test Input1 Output1)
 tests1 =
-    [ Test1 "example"
+    [ Test "example"
         "input"
         "parsed input 1"
         "output 1"
