@@ -27,7 +27,7 @@ type alias Output2 =
     String
 
 
-input : Input
+input : String
 input =
     "input"
 
