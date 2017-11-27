@@ -1,13 +1,15 @@
 module Year201X.DayXX exposing (..)
 
-import Advent
+import Advent exposing (Test(..))
 
 
 main : Program Never Output Never
 main =
     Advent.program
         { input = input
-        , init = init
+        , parse = parse
+        , compute = compute
+        , tests = tests
         }
 
 
@@ -24,6 +26,22 @@ input =
     "input"
 
 
-init : Input -> Output
-init input =
+parse : String -> Input
+parse input =
+    "parsed " ++ input
+
+
+compute : Input -> Output
+compute input =
     "output"
+
+
+tests : List (Test Input Output)
+tests =
+    [ ParseTest "example"
+        "input"
+        "parsed input"
+    , ComputeTest "example"
+        "parsed input"
+        "output"
+    ]
