@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+INPUT="Year${1}/Day${2}.elm" 
+OUTPUT="js/${1}-${2}.js"
+
+while true; do
+  ls "${INPUT}" | entr -d ./run "${1}" "${2}";
+done;
+
