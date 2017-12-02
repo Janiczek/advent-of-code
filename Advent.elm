@@ -1,4 +1,4 @@
-module Advent exposing (program, Test)
+module Advent exposing (..)
 
 
 program :
@@ -68,3 +68,11 @@ runTest puzzleType parse compute { description, input, expectedParsedInput, expe
             Debug.crash <| "\nTest \"" ++ description ++ "\" for " ++ puzzleType ++ " failed on `compute`:\n  input:    " ++ toString parsedInput ++ "\n  expected: " ++ toString expectedOutput ++ "\n  actual:   " ++ toString output ++ "\n"
         else
             ()
+
+
+toInt : String -> Int
+toInt string =
+    string
+        |> String.toInt
+        |> Result.mapError (\_ -> Debug.crash "Wrong input!")
+        |> Result.withDefault 0
