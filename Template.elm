@@ -1,4 +1,4 @@
-module Year201X.DayXX exposing (..)
+module Year2017.Day0X exposing (..)
 
 import Advent exposing (Test)
 
@@ -7,8 +7,8 @@ main : Program Never ( Output1, Output2 ) Never
 main =
     Advent.program
         { input = input
-        , parse1 = parse1
-        , parse2 = parse2
+        , parse1 = parse
+        , parse2 = parse
         , compute1 = compute1
         , compute2 = compute2
         , tests1 = tests1
@@ -16,20 +16,12 @@ main =
         }
 
 
-type alias Input1 =
-    String
+type alias Input =
+    Int
 
 
-type alias Input2 =
-    String
-
-
-type alias Output1 =
-    String
-
-
-type alias Output2 =
-    String
+type alias Output =
+    Int
 
 
 input : String
@@ -37,27 +29,22 @@ input =
     "input"
 
 
-parse1 : String -> Input1
-parse1 input =
-    "parsed " ++ input ++ " 1"
-
-
-parse2 : String -> Input2
-parse2 input =
+parse : String -> Input
+parse input =
     "parsed " ++ input ++ " 2"
 
 
-compute1 : Input1 -> Output1
+compute1 : Input -> Output
 compute1 input =
     "output 1"
 
 
-compute2 : Input2 -> Output2
+compute2 : Input -> Output
 compute2 input =
     "output 2"
 
 
-tests1 : List (Test Input1 Output1)
+tests1 : List (Test Input Output)
 tests1 =
     [ Test "example"
         "input"
@@ -66,7 +53,7 @@ tests1 =
     ]
 
 
-tests2 : List (Test Input2 Output2)
+tests2 : List (Test Input Output)
 tests2 =
     [ Test "example"
         "input"
