@@ -3,7 +3,7 @@ module Year2017.Day0X exposing (..)
 import Advent exposing (Test)
 
 
-main : Program Never ( Output1, Output2 ) Never
+main : Program Never ( Output, Output ) Never
 main =
     Advent.program
         { input = input
