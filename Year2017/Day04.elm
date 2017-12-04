@@ -556,8 +556,8 @@ compute1 input =
 
 isValid : List String -> Bool
 isValid words =
-    ((words |> List.length) > 1)
-        && (words |> List.all (isOnlyOnce words))
+    words
+        |> List.all (isOnlyOnce words)
 
 
 isOnlyOnce : List String -> String -> Bool
@@ -571,9 +571,8 @@ isOnlyOnce words word =
 compute2 : Input -> Output
 compute2 input =
     input
-        |> List.map (\pw -> ( isValid (List.map sortString pw), pw ))
-        |> List.filter (\( isV, pw ) -> isV)
-        |> List.map Tuple.second
+        |> List.map (List.map sortString)
+        |> List.filter isValid
         |> List.length
 
 
@@ -599,25 +598,29 @@ tests1 =
         "aa bb cc dd aaa"
         [ [ "aa", "bb", "cc", "dd", "aaa" ] ]
         1
-    , Test "??"
-        "rum mur\nmur mur"
-        [ [ "rum", "mur" ], [ "mur", "mur" ] ]
-        1
-    , Test "??"
-        "rum mur\nmur mur mur"
-        [ [ "rum", "mur" ], [ "mur", "mur", "mur" ] ]
-        1
-    , Test "??"
-        "tzqq tzqq wkb wkb"
-        [ [ "tzqq", "tzqq", "wkb", "wkb" ] ]
-        0
-    , Test "??"
-        "wkb"
-        [ [ "wkb" ] ]
-        0
     ]
 
 
 tests2 : List (Test Input Output)
 tests2 =
-    []
+    [ Test "example 1"
+        "abcde fghij"
+        [ [ "abcde", "fghij" ] ]
+        1
+    , Test "example 2"
+        "abcde xyz ecdab"
+        [ [ "abcde", "xyz", "ecdab" ] ]
+        0
+    , Test "example 3"
+        "a ab abc abd abf abj"
+        [ [ "a", "ab", "abc", "abd", "abf", "abj" ] ]
+        1
+    , Test "example 4"
+        "iiii oiii ooii oooi oooo"
+        [ [ "iiii", "oiii", "ooii", "oooi", "oooo" ] ]
+        1
+    , Test "example 5"
+        "oiii ioii iioi iiio"
+        [ [ "oiii", "ioii", "iioi", "iiio" ] ]
+        0
+    ]
