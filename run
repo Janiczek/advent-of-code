@@ -4,6 +4,6 @@ INPUT="Year${1}/Day${2}.elm"
 OUTPUT="js/${1}-${2}.js"
 
 clear;
-elm-make --yes --warn "${INPUT}" --output "${OUTPUT}";
-echo "--------------------------------------";
+elm-make --yes --warn "${INPUT}" --output "${OUTPUT}" && \
+echo "--------------------------------------" && \
 node "${OUTPUT}";
