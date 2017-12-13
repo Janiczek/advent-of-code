@@ -1,4 +1,4 @@
-module Year2017.Day0X exposing (..)
+module Year2017.Day1X exposing (..)
 
 import Advent exposing (Test)
 
@@ -24,39 +24,35 @@ type alias Output =
     Int
 
 
-input : String
-input =
-    "input"
-
-
 parse : String -> Input
 parse input =
-    "parsed " ++ input ++ " 2"
+    -1
 
 
 compute1 : Input -> Output
 compute1 input =
-    "output 1"
+    -1
 
 
 compute2 : Input -> Output
 compute2 input =
-    "output 2"
+    -1
 
 
 tests1 : List (Test Input Output)
 tests1 =
     [ Test "example"
         "input"
-        "parsed input 1"
-        "output 1"
+        -1
+        -1
     ]
 
 
 tests2 : List (Test Input Output)
 tests2 =
-    [ Test "example"
-        "input"
-        "parsed input 2"
-        "output 2"
-    ]
+    []
+
+
+input : String
+input =
+    "input"
