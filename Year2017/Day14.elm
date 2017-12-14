@@ -44,10 +44,6 @@ compute1 : Input -> Output
 compute1 input =
     input
         |> gridOfHexes
-        --|> List.map hashesAndDots
-        --|> String.join "\n"
-        --|> Debug.log "?"
-        --|> Debug.crash "..."
         |> List.map count
         |> List.sum
 
@@ -266,10 +262,6 @@ findAnswer2 listOfLists =
 
 compute2 : Input -> Output
 compute2 input =
-    --[ [ True, False, False ]
-    --, [ True, True, False ]
-    --, [ False, True, False ]
-    --]
     input
         |> gridOfHexes
         |> List.map bools
