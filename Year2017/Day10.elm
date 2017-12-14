@@ -206,6 +206,14 @@ tests2 =
     []
 
 
+hash : String -> String
+hash input =
+    input
+        |> String.toList
+        |> List.map Char.toCode
+        |> compute2
+
+
 input : String
 input =
     "83,0,193,1,254,237,187,40,88,27,2,255,149,29,42,100"

@@ -76,3 +76,13 @@ toInt string =
         |> String.toInt
         |> Result.mapError (\_ -> Debug.crash "Wrong input!")
         |> Result.withDefault 0
+
+
+unsafeMaybe : Maybe a -> a
+unsafeMaybe maybe =
+    case maybe of
+        Just x ->
+            x
+
+        Nothing ->
+            Debug.crash "unsafeMaybe"
