@@ -1,7 +1,39 @@
-Dependencies: `elm-make`, `node`, [`entr`](http://entrproject.org/)
 
-`./watch 2016 01` for autorun when developing ... or just once: `./run 2016 01`
+# Advent of Code
 
-For puzzles that need Node interop:
+## Progress
 
-`./node_run 2016 01`
+| Day | 2015 | 2016 | 2017 | 2018 |
+| --- | ---- | ---- | ---- | ---- |
+| 1   | [x]  | [x]  | [x]  | [ ]  |
+| 2   | [ ]  | [x]  | [x]  | [ ]  |
+| 3   | [ ]  | [x]  | [x]  | [ ]  |
+| 4   | [ ]  | [x]  | [x]  | [ ]  |
+| 5   | [ ]  | [x]  | [x]  | [ ]  |
+| 6   | [ ]  | [x]  | [x]  | [ ]  |
+| 7   | [ ]  | [x]  | [x]  | [ ]  |
+| 8   | [ ]  | [ ]  | [x]  | [ ]  |
+| 9   | [ ]  | [ ]  | [x]  | [ ]  |
+| 10  | [ ]  | [ ]  | [x]  | [ ]  |
+| 11  | [ ]  | [ ]  | [x]  | [ ]  |
+| 12  | [ ]  | [ ]  | [x]  | [ ]  |
+| 13  | [ ]  | [ ]  | [x]  | [ ]  |
+| 14  | [x]  | [ ]  | [x]  | [ ]  |
+| 15  | [x]  | [ ]  | [x]  | [ ]  |
+| 16  | [x]  | [ ]  | [x]  | [ ]  |
+| 17  | [x]  | [ ]  | [x]  | [ ]  |
+| 18  | [x]  | [ ]  | [x]  | [ ]  |
+| 19  | [ ]  | [ ]  | [x]  | [ ]  |
+| 20  | [ ]  | [ ]  | [x]  | [ ]  |
+| 21  | [ ]  | [ ]  | [x]  | [ ]  |
+| 22  | [ ]  | [ ]  | [x]  | [ ]  |
+| 23  | [ ]  | [ ]  | [x]  | [ ]  |
+| 24  | [ ]  | [ ]  | [x]  | [ ]  |
+| 25  | [ ]  | [ ]  | [x]  | [ ]  |
+
+--------
+
+```
+$ ./start 2018 01     # makes a new Elm module, copies the puzzle input into it, opens it in vim
+$ ./watch 2018 01     # compiles and shows the results
+```

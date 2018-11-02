@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "md5-jkmyers": "^0.0.1"
+  },
+  "devDependencies": {
+    "elm": "^0.19.0-bugfix2"
   }
 }

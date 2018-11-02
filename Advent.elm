@@ -1,4 +1,11 @@
-module Advent exposing (..)
+module Advent
+    exposing
+        ( Test
+        , program
+        , removeNewlinesAtEnds
+        , unsafeMaybe
+        , unsafeToInt
+        )
 
 
 program :
@@ -10,25 +17,26 @@ program :
     , tests1 : List (Test input1 output1)
     , tests2 : List (Test input2 output2)
     }
-    -> Program Never ( output1, output2 ) Never
+    -> Program () ( output1, output2 ) Never
 program { input, parse1, parse2, compute1, compute2, tests1, tests2 } =
-    Platform.program
+    Platform.worker
         { init =
-            let
-                testResults1 =
-                    tests1
-                        |> List.map (runTest "*" parse1 compute1)
+            \_ ->
+                let
+                    testResults1 =
+                        tests1
+                            |> List.map (runTest "*" parse1 compute1)
 
-                testResults2 =
-                    tests2
-                        |> List.map (runTest "**" parse2 compute2)
+                    testResults2 =
+                        tests2
+                            |> List.map (runTest "**" parse2 compute2)
 
-                announce testResults1 testResults2 =
-                    Debug.log "Tests passed!" ()
+                    announce _ _ =
+                        Debug.log "Tests passed!" ()
 
-                _ =
-                    announce testResults1 testResults2
-            in
+                    _ =
+                        announce testResults1 testResults2
+                in
                 ( ( input
                         |> parse1
                         |> compute1
@@ -40,8 +48,8 @@ program { input, parse1, parse2, compute1, compute2, tests1, tests2 } =
                   )
                 , Cmd.none
                 )
-        , update = (\_ model -> ( model, Cmd.none ))
-        , subscriptions = (\_ -> Sub.none)
+        , update = \_ model -> ( model, Cmd.none )
+        , subscriptions = \_ -> Sub.none
         }
 
 
@@ -62,19 +70,42 @@ runTest puzzleType parse compute { description, input, expectedParsedInput, expe
         output =
             compute parsedInput
     in
-        if parsedInput /= expectedParsedInput then
-            Debug.crash <| "\nTest \"" ++ description ++ "\" for " ++ puzzleType ++ " failed on `parse`:\n  input:    " ++ toString input ++ "\n  expected: " ++ toString expectedParsedInput ++ "\n  actual:   " ++ toString parsedInput ++ "\n"
-        else if output /= expectedOutput then
-            Debug.crash <| "\nTest \"" ++ description ++ "\" for " ++ puzzleType ++ " failed on `compute`:\n  input:    " ++ toString parsedInput ++ "\n  expected: " ++ toString expectedOutput ++ "\n  actual:   " ++ toString output ++ "\n"
-        else
-            ()
+    if parsedInput /= expectedParsedInput then
+        Debug.todo <|
+            "\nTest \""
+                ++ description
+                ++ "\" for "
+                ++ puzzleType
+                ++ " failed on `parse`:\n  input:    "
+                ++ Debug.toString input
+                ++ "\n  expected: "
+                ++ Debug.toString expectedParsedInput
+                ++ "\n  actual:   "
+                ++ Debug.toString parsedInput
+                ++ "\n"
+    else if output /= expectedOutput then
+        Debug.todo <|
+            "\nTest \""
+                ++ description
+                ++ "\" for "
+                ++ puzzleType
+                ++ " failed on `compute`:\n  input:    "
+                ++ Debug.toString parsedInput
+                ++ "\n  expected: "
+                ++ Debug.toString expectedOutput
+                ++ "\n  actual:   "
+                ++ Debug.toString output
+                ++ "\n"
+    else
+        ()
 
 
-toInt : String -> Int
-toInt string =
+unsafeToInt : String -> Int
+unsafeToInt string =
     string
         |> String.toInt
-        |> Result.mapError (\_ -> Debug.crash "Wrong input!")
+        |> Result.fromMaybe "Whatever"
+        |> Result.mapError (\_ -> Debug.todo "Wrong input!")
         |> Result.withDefault 0
 
 
@@ -85,4 +116,14 @@ unsafeMaybe maybe =
             x
 
         Nothing ->
-            Debug.crash "unsafeMaybe"
+            Debug.todo "unsafeMaybe"
+
+
+removeNewlinesAtEnds : String -> String
+removeNewlinesAtEnds string =
+    if String.startsWith "\n" string then
+        removeNewlinesAtEnds (String.dropLeft 1 string)
+    else if String.endsWith "\n" string then
+        removeNewlinesAtEnds (String.dropRight 1 string)
+    else
+        string

@@ -2,3 +2,4 @@
 /js
 /node_modules
 /yarn.lock
+/input*.txt
