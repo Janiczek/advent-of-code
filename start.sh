@@ -15,4 +15,6 @@ sed -i "s/YearXXX/Year${YEAR}/g" "${OUTPUT}"
 sed -i "s/DayXXX/Day${DAY}/g" "${OUTPUT}"
 sed -i -e "/InputXXX/r ${PUZZLE_FILE}" -e "/InputXXX/d" "${OUTPUT}"
 
-vim "${OUTPUT}"
+tmux split-window -h \; \
+  send-keys -t 0 "vim ${OUTPUT}" C-m \; \
+  send-keys -t 1 "./watch.sh ${YEAR} ${DAY}" C-m
