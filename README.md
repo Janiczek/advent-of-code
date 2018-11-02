@@ -3,37 +3,39 @@
 
 ## Progress
 
-| Day | 2015 | 2016 | 2017 | 2018 |
-| --- | ---- | ---- | ---- | ---- |
-| 1   | [x]  | [x]  | [x]  | [ ]  |
-| 2   | [ ]  | [x]  | [x]  | [ ]  |
-| 3   | [ ]  | [x]  | [x]  | [ ]  |
-| 4   | [ ]  | [x]  | [x]  | [ ]  |
-| 5   | [ ]  | [x]  | [x]  | [ ]  |
-| 6   | [ ]  | [x]  | [x]  | [ ]  |
-| 7   | [ ]  | [x]  | [x]  | [ ]  |
-| 8   | [ ]  | [ ]  | [x]  | [ ]  |
-| 9   | [ ]  | [ ]  | [x]  | [ ]  |
-| 10  | [ ]  | [ ]  | [x]  | [ ]  |
-| 11  | [ ]  | [ ]  | [x]  | [ ]  |
-| 12  | [ ]  | [ ]  | [x]  | [ ]  |
-| 13  | [ ]  | [ ]  | [x]  | [ ]  |
-| 14  | [x]  | [ ]  | [x]  | [ ]  |
-| 15  | [x]  | [ ]  | [x]  | [ ]  |
-| 16  | [x]  | [ ]  | [x]  | [ ]  |
-| 17  | [x]  | [ ]  | [x]  | [ ]  |
-| 18  | [x]  | [ ]  | [x]  | [ ]  |
-| 19  | [ ]  | [ ]  | [x]  | [ ]  |
-| 20  | [ ]  | [ ]  | [x]  | [ ]  |
-| 21  | [ ]  | [ ]  | [x]  | [ ]  |
-| 22  | [ ]  | [ ]  | [x]  | [ ]  |
-| 23  | [ ]  | [ ]  | [x]  | [ ]  |
-| 24  | [ ]  | [ ]  | [x]  | [ ]  |
-| 25  | [ ]  | [ ]  | [x]  | [ ]  |
+| Day | 2015               | 2016               | 2017               | 2018 |
+| --- | ------------------ | ------------------ | ------------------ | ---- |
+| 1   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |      |
+| 2   |                    | :heavy_check_mark: | :heavy_check_mark: |      |
+| 3   |                    | :heavy_check_mark: | :heavy_check_mark: |      |
+| 4   |                    | :heavy_check_mark: | :heavy_check_mark: |      |
+| 5   |                    | :heavy_check_mark: | :heavy_check_mark: |      |
+| 6   |                    | :heavy_check_mark: | :heavy_check_mark: |      |
+| 7   |                    | :heavy_check_mark: | :heavy_check_mark: |      |
+| 8   |                    |                    | :heavy_check_mark: |      |
+| 9   |                    |                    | :heavy_check_mark: |      |
+| 10  |                    |                    | :heavy_check_mark: |      |
+| 11  |                    |                    | :heavy_check_mark: |      |
+| 12  |                    |                    | :heavy_check_mark: |      |
+| 13  |                    |                    | :heavy_check_mark: |      |
+| 14  | :heavy_check_mark: |                    | :heavy_check_mark: |      |
+| 15  | :heavy_check_mark: |                    | :heavy_check_mark: |      |
+| 16  | :heavy_check_mark: |                    | :heavy_check_mark: |      |
+| 17  | :heavy_check_mark: |                    | :heavy_check_mark: |      |
+| 18  | :heavy_check_mark: |                    | :heavy_check_mark: |      |
+| 19  |                    |                    | :heavy_check_mark: |      |
+| 20  |                    |                    | :heavy_check_mark: |      |
+| 21  |                    |                    | :heavy_check_mark: |      |
+| 22  |                    |                    | :heavy_check_mark: |      |
+| 23  |                    |                    | :heavy_check_mark: |      |
+| 24  |                    |                    | :heavy_check_mark: |      |
+| 25  |                    |                    | :heavy_check_mark: |      |
 
 --------
 
 ```
-$ ./start 2018 01     # makes a new Elm module, copies the puzzle input into it, opens it in vim
-$ ./watch 2018 01     # compiles and shows the results
+$ ./start.sh 2018 01     # makes a new Elm module, copies the puzzle input into it, opens it in vim
+$ ./watch.sh 2018 01     # compiles and shows the results
 ```
+
+May the error messages lead you towards the right dependencies :smirk:
