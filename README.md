@@ -34,8 +34,7 @@
 --------
 
 ```
-$ ./start.sh 2018 01     # makes a new Elm module, copies the puzzle input into it, opens it in vim
-$ ./watch.sh 2018 01     # compiles and shows the results
+$ ./start.sh 2018 01     # makes a new Elm module, copies the puzzle input into it, opens vim and watcher in two tmux panes
 ```
 
 May the error messages lead you towards the right dependencies :smirk:
