@@ -38,7 +38,7 @@ parse1 string =
 
 parse2 : String -> Input2
 parse2 string =
-    -1
+    parse1 string
 
 
 
