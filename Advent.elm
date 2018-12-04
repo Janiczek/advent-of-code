@@ -1,11 +1,11 @@
-module Advent
-    exposing
-        ( Test
-        , program
-        , removeNewlinesAtEnds
-        , unsafeMaybe
-        , unsafeToInt
-        )
+module Advent exposing
+    ( Test
+    , pairings
+    , program
+    , removeNewlinesAtEnds
+    , unsafeMaybe
+    , unsafeToInt
+    )
 
 
 program :
@@ -83,6 +83,7 @@ runTest puzzleType parse compute { description, input, expectedParsedInput, expe
                 ++ "\n  actual:   "
                 ++ Debug.toString parsedInput
                 ++ "\n"
+
     else if output /= expectedOutput then
         Debug.todo <|
             "\nTest \""
@@ -96,6 +97,7 @@ runTest puzzleType parse compute { description, input, expectedParsedInput, expe
                 ++ "\n  actual:   "
                 ++ Debug.toString output
                 ++ "\n"
+
     else
         ()
 
@@ -123,7 +125,19 @@ removeNewlinesAtEnds : String -> String
 removeNewlinesAtEnds string =
     if String.startsWith "\n" string then
         removeNewlinesAtEnds (String.dropLeft 1 string)
+
     else if String.endsWith "\n" string then
         removeNewlinesAtEnds (String.dropRight 1 string)
+
     else
         string
+
+
+pairings : List a -> List ( a, a )
+pairings xs =
+    case xs of
+        [] ->
+            []
+
+        x :: xs_ ->
+            List.map (\y -> ( x, y )) xs_ ++ pairings xs_
