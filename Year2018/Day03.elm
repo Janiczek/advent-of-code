@@ -101,6 +101,16 @@ parseClaim string =
 -- 3. COMPUTE (actually solve the problem)
 
 
+pairings : List a -> List ( a, a )
+pairings xs =
+    case xs of
+        [] ->
+            []
+
+        x :: xs_ ->
+            List.map (\y -> ( x, y )) xs_ ++ pairings xs_
+
+
 collidingRect : Rect -> Rect -> Maybe Rect
 collidingRect a b =
     let
@@ -202,59 +212,11 @@ repr { width, height, top, left } =
 
 compute1 : Input1 -> Output1
 compute1 claims =
-    let
-        rects =
-            List.map .rect claims
-
-        -- maybe Set instead of List?
-        processA : List Rect -> List Rect -> List Rect
-        processA remaining overlaps =
-            case remaining of
-                [] ->
-                    overlaps
-
-                a :: xs ->
-                    let
-                        abOverlaps =
-                            processB a xs []
-
-                        newOverlaps =
-                            abOverlaps ++ overlaps
-                    in
-                    processA xs newOverlaps
-
-        processB : Rect -> List Rect -> List Rect -> List Rect
-        processB a remaining overlaps =
-            case remaining of
-                [] ->
-                    overlaps
-
-                b :: xs ->
-                    let
-                        overlap =
-                            collidingRect a b
-
-                        newOverlaps =
-                            case overlap of
-                                Just o ->
-                                    o :: overlaps
-
-                                Nothing ->
-                                    overlaps
-                    in
-                    processB a xs newOverlaps
-
-        overlapRects : List Rect
-        overlapRects =
-            processA rects []
-
-        overlapParts : Set ( Int, Int )
-        overlapParts =
-            overlapRects
-                |> List.concatMap parts
-                |> Set.fromList
-    in
-    Set.size overlapParts
+    pairings claims
+        |> List.filterMap (\( c1, c2 ) -> collidingRect c1.rect c2.rect)
+        |> List.concatMap parts
+        |> Set.fromList
+        |> Set.size
 
 
 parts : Rect -> List ( Int, Int )
