@@ -13,7 +13,8 @@
             "elm-community/graph": "6.0.0",
             "elm-community/list-extra": "8.1.0",
             "rtfeldman/elm-sorter-experiment": "2.1.1",
-            "truqu/elm-md5": "1.1.0"
+            "truqu/elm-md5": "1.1.0",
+            "wernerdegroot/listzipper": "3.1.1"
         },
         "indirect": {
             "avh4/elm-fifo": "1.0.4",
