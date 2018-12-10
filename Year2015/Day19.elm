@@ -1,11 +1,11 @@
-module Year2015.Day19 exposing (..)
+module Year2015.Day19 exposing (Input, Output, Rule, applyRules, compute1, compute2, go, input, main, parse, parseRule, tests1, tests2)
 
 import Advent exposing (Test)
-import Set exposing (Set)
 import List.Extra
+import Set exposing (Set)
 
 
-main : Program Never ( Output, Output ) Never
+main : Program () ( Output, Output ) Never
 main =
     Advent.program
         { input = input
@@ -31,9 +31,9 @@ type alias Output =
 
 
 parse : String -> Input
-parse input =
+parse input_ =
     case
-        input
+        input_
             |> String.lines
             |> List.reverse
     of
@@ -41,7 +41,7 @@ parse input =
             ( start, rules |> List.map parseRule |> List.reverse )
 
         _ ->
-            Debug.crash "wrong input!"
+            Debug.todo "wrong input!"
 
 
 parseRule : String -> Rule
@@ -51,7 +51,7 @@ parseRule string =
             ( a, b )
 
         _ ->
-            Debug.crash "wrong input!"
+            Debug.todo "wrong input!"
 
 
 compute1 : Input -> Output
@@ -66,29 +66,29 @@ applyRules : List Rule -> String -> List String
 applyRules rules string =
     rules
         |> List.concatMap
-            (\( input, output ) ->
+            (\( input_, output ) ->
                 let
                     splitted =
                         string
                             -- ["", "O", ""]
-                            |> String.split input
+                            |> String.split input_
                 in
-                    List.range 1 (List.length splitted - 1)
-                        |> List.map
-                            (\i ->
-                                let
-                                    before =
-                                        splitted
-                                            |> List.take i
-                                            |> String.join input
+                List.range 1 (List.length splitted - 1)
+                    |> List.map
+                        (\i ->
+                            let
+                                before =
+                                    splitted
+                                        |> List.take i
+                                        |> String.join input_
 
-                                    after =
-                                        splitted
-                                            |> List.drop i
-                                            |> String.join input
-                                in
-                                    before ++ output ++ after
-                            )
+                                after =
+                                    splitted
+                                        |> List.drop i
+                                        |> String.join input_
+                            in
+                            before ++ output ++ after
+                        )
             )
 
 
@@ -98,7 +98,7 @@ compute2 ( target, rules ) =
         invertedRules =
             rules |> List.map (\( i, o ) -> ( o, i ))
     in
-        go invertedRules [ target ] "e" 0
+    go invertedRules [ target ] "e" 0
 
 
 go : List Rule -> List String -> String -> Int -> Int
@@ -107,27 +107,28 @@ go rules currents target stepsTaken =
         _ =
             Debug.log "steps, length" ( stepsTaken, List.length currents )
     in
-        if currents |> List.member target then
-            stepsTaken
-        else
-            let
-                allNewCurrents =
-                    currents
-                        |> List.concatMap (applyRules rules)
+    if currents |> List.member target then
+        stepsTaken
 
-                lenOfShortest =
-                    allNewCurrents
-                        |> List.map String.length
-                        |> List.minimum
-                        |> Advent.unsafeMaybe
-                        |> Debug.log "length of shortest"
+    else
+        let
+            allNewCurrents =
+                currents
+                    |> List.concatMap (applyRules rules)
 
-                shortestCurrents =
-                    allNewCurrents
-                        |> List.filter (\c -> String.length c == lenOfShortest)
-                        |> List.Extra.unique
-            in
-                go rules shortestCurrents target (stepsTaken + 1)
+            lenOfShortest =
+                allNewCurrents
+                    |> List.map String.length
+                    |> List.minimum
+                    |> Advent.unsafeMaybe
+                    |> Debug.log "length of shortest"
+
+            shortestCurrents =
+                allNewCurrents
+                    |> List.filter (\c -> String.length c == lenOfShortest)
+                    |> List.Extra.unique
+        in
+        go rules shortestCurrents target (stepsTaken + 1)
 
 
 tests1 : List (Test Input Output)
