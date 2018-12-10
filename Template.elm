@@ -1,4 +1,4 @@
-module YearXXX.DayXXX exposing (..)
+module YearXXX.DayXXX exposing (Input1, Input2, Output1, Output2, compute1, compute2, input_, main, parse1, parse2, tests1, tests2)
 
 import Advent
     exposing
@@ -6,6 +6,7 @@ import Advent
           -- , unsafeToInt
           -- , unsafeMaybe
         )
+
 
 
 -- 1. TYPES (what is the best representation of the problem?)
@@ -47,7 +48,9 @@ parse2 string =
 
 compute1 : Input1 -> Output1
 compute1 input =
-    -1
+    input
+        |> Debug.log "input"
+        |> always -1
 
 
 compute2 : Input2 -> Output2
