@@ -76,14 +76,6 @@ compute1 input =
 
 play : Value -> Input1 -> Zipper Value -> Dict Player Score -> Score
 play marbleToBePut ({ players, lastMarble } as input) marbles points =
-    let
-        _ =
-            if (marbleToBePut |> modBy 10000) == 0 then
-                Debug.log "" marbleToBePut
-
-            else
-                marbleToBePut
-    in
     if marbleToBePut > lastMarble then
         points
             |> Dict.values
@@ -144,10 +136,6 @@ appendToRight value zipper =
 removeNext : Zipper a -> Zipper a
 removeNext zipper =
     if List.isEmpty (Zipper.after zipper) then
-        let
-            _ =
-                Debug.log "rare occurence!" ()
-        in
         Zipper.mapBefore (List.drop 1) zipper
 
     else
