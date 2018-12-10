@@ -31,8 +31,8 @@
 | 24  |                        |                    | :heavy_check_mark:     |                    |
 | 25  |                        |                    | :heavy_check_mark:     |                    |
 
-<sup>1<sup>: Done efficiently in Clojure thanks to the library `instaparse`. Done not-so-efficiently in Elm, and exceeds heap memory limit.
-<sup>2<sup>: Elm was mainly used for exploring the problem. After an insight was obtained, the real solution was written in Python.
+* <sup>1</sup>: Done efficiently in Clojure thanks to the library `instaparse`. Done not-so-efficiently in Elm, and exceeds heap memory limit.
+* <sup>2</sup>: Elm was mainly used for exploring the problem. After an insight was obtained, the real solution was written in Python.
 
 --------
 
