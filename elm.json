@@ -13,6 +13,7 @@
             "elm-community/graph": "6.0.0",
             "elm-community/list-extra": "8.1.0",
             "rtfeldman/elm-sorter-experiment": "2.1.1",
+            "the-sett/lazy-list": "1.0.0",
             "truqu/elm-md5": "1.1.0",
             "wernerdegroot/listzipper": "3.1.1"
         },
