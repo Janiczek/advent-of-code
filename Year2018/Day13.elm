@@ -250,85 +250,81 @@ trackToChar track =
 
 show : String -> Input1 -> Input1
 show message ( tracks, carts ) =
-    if List.length carts < 4 then
-        let
-            cartPositions : Dict ( Int, Int ) Char
-            cartPositions =
-                carts
-                    |> List.map
-                        (\c ->
-                            case c of
-                                WorkingCart { position, direction } ->
-                                    ( position
-                                    , case direction of
-                                        Right ->
-                                            '>'
+    let
+        cartPositions : Dict ( Int, Int ) Char
+        cartPositions =
+            carts
+                |> List.map
+                    (\c ->
+                        case c of
+                            WorkingCart { position, direction } ->
+                                ( position
+                                , case direction of
+                                    Right ->
+                                        '>'
 
-                                        Left ->
-                                            '<'
+                                    Left ->
+                                        '<'
 
-                                        Up ->
-                                            '^'
+                                    Up ->
+                                        '^'
 
-                                        Down ->
-                                            'v'
-                                    )
+                                    Down ->
+                                        'v'
+                                )
 
-                                CrashedCart position ->
-                                    ( position, 'X' )
-                        )
-                    |> Dict.fromList
+                            CrashedCart position ->
+                                ( position, 'X' )
+                    )
+                |> Dict.fromList
 
-            trackCoords : List ( Int, Int )
-            trackCoords =
-                Dict.keys tracks
+        trackCoords : List ( Int, Int )
+        trackCoords =
+            Dict.keys tracks
 
-            maxX : Int
-            maxX =
-                trackCoords
-                    |> List.map Tuple.first
-                    |> List.maximum
-                    |> Advent.unsafeMaybe
+        maxX : Int
+        maxX =
+            trackCoords
+                |> List.map Tuple.first
+                |> List.maximum
+                |> Advent.unsafeMaybe
 
-            maxY : Int
-            maxY =
-                trackCoords
-                    |> List.map Tuple.second
-                    |> List.maximum
-                    |> Advent.unsafeMaybe
+        maxY : Int
+        maxY =
+            trackCoords
+                |> List.map Tuple.second
+                |> List.maximum
+                |> Advent.unsafeMaybe
 
-            output : String
-            output =
-                List.range 0 maxY
-                    |> List.map
-                        (\y ->
-                            List.range 0 maxX
-                                |> List.map
-                                    (\x ->
-                                        let
-                                            track : Maybe Char
-                                            track =
-                                                Dict.get ( x, y ) tracks
-                                                    |> Maybe.map trackToChar
+        output : String
+        output =
+            List.range 0 maxY
+                |> List.map
+                    (\y ->
+                        List.range 0 maxX
+                            |> List.map
+                                (\x ->
+                                    let
+                                        track : Maybe Char
+                                        track =
+                                            Dict.get ( x, y ) tracks
+                                                |> Maybe.map trackToChar
 
-                                            cart : Maybe Char
-                                            cart =
-                                                Dict.get ( x, y ) cartPositions
-                                        in
-                                        cart
-                                            |> Maybe.withDefault (track |> Maybe.withDefault ' ')
-                                    )
-                                |> String.fromList
-                        )
-                    |> String.join "\n"
+                                        cart : Maybe Char
+                                        cart =
+                                            Dict.get ( x, y ) cartPositions
+                                    in
+                                    cart
+                                        |> Maybe.withDefault (track |> Maybe.withDefault ' ')
+                                )
+                            |> String.fromList
+                    )
+                |> String.join "\n"
 
-            _ =
-                Debug.log (output ++ "\n") message
-        in
-        ( tracks, carts )
-
-    else
-        ( tracks, carts )
+        _ =
+            Debug.log (output ++ "\n") message
+    in
+    ( tracks, carts )
 
 
 cartPosition : Cart -> ( Int, Int )
@@ -341,85 +337,111 @@ cartPosition cart =
             position
 
 
+swap : ( a, b ) -> ( b, a )
+swap ( a, b ) =
+    ( b, a )
+
+
 step : StopBehaviour -> ( Tracks, Carts ) -> ( Tracks, Carts )
 step stopBehaviour ( tracks, carts ) =
     let
         sortedCarts : List Cart
         sortedCarts =
             carts
-                |> List.sortBy cartPosition
+                |> List.sortBy (swap << cartPosition)
 
         newCarts =
             sortedCarts
-                |> List.foldl (stepCart stopBehaviour tracks) carts
+                |> List.foldl (stepCart stopBehaviour tracks) ( carts, [] )
+                |> Tuple.first
     in
     ( tracks, newCarts )
 
 
-stepCart : StopBehaviour -> Tracks -> Cart -> Carts -> Carts
-stepCart stopBehaviour tracks cart allCarts =
+stepCart : StopBehaviour -> Tracks -> Cart -> ( Carts, List ( Int, Int ) ) -> ( Carts, List ( Int, Int ) )
+stepCart stopBehaviour tracks cart ( allCarts, crashedPositions ) =
+    --let
+    --    _ =
+    --        Debug.log "processing" (cartPosition cart)
+    --in
     case cart of
         WorkingCart c ->
-            let
-                newPosition : ( Int, Int )
-                newPosition =
-                    stepInDirection c.direction c.position
-
-                newTrack : Track
-                newTrack =
-                    getTrack tracks newPosition
-
-                newlyOnIntersection : Bool
-                newlyOnIntersection =
-                    newTrack == Intersection
-
-                newDirection : Direction
-                newDirection =
-                    stepDirection newTrack c.nextIntersection c.direction
-
-                newNextIntersection : Turn
-                newNextIntersection =
-                    if newlyOnIntersection then
-                        stepTurn c.nextIntersection
-
-                    else
-                        c.nextIntersection
-
-                newUncrashed : Cart
-                newUncrashed =
-                    WorkingCart
-                        { position = newPosition
-                        , direction = newDirection
-                        , nextIntersection = newNextIntersection
-                        }
-
-                newCrashed : Cart
-                newCrashed =
-                    CrashedCart newPosition
-
-                withoutOld : Carts
-                withoutOld =
-                    List.filter ((/=) cart) allCarts
-
-                crashed : Bool
-                crashed =
-                    List.any (\cc -> cartPosition cc == newPosition) allCarts
-            in
-            if crashed then
-                case stopBehaviour of
-                    StopAtFirstCrash ->
-                        newCrashed
-                            :: (withoutOld |> List.filter (\cc -> cartPosition cc /= newPosition))
-
-                    StopAtLastAlive ->
-                        withoutOld
-                            |> List.filter (\cc -> cartPosition cc /= newPosition)
+            if List.member c.position crashedPositions then
+                ( allCarts
+                , crashedPositions
+                )
 
             else
-                newUncrashed :: withoutOld
+                let
+                    newPosition : ( Int, Int )
+                    newPosition =
+                        stepInDirection c.direction c.position
+
+                    newTrack : Track
+                    newTrack =
+                        getTrack tracks newPosition
+
+                    newlyOnIntersection : Bool
+                    newlyOnIntersection =
+                        newTrack == Intersection
+
+                    newDirection : Direction
+                    newDirection =
+                        stepDirection newTrack c.nextIntersection c.direction
+
+                    newNextIntersection : Turn
+                    newNextIntersection =
+                        if newlyOnIntersection then
+                            stepTurn c.nextIntersection
+
+                        else
+                            c.nextIntersection
+
+                    newUncrashed : Cart
+                    newUncrashed =
+                        WorkingCart
+                            { position = newPosition
+                            , direction = newDirection
+                            , nextIntersection = newNextIntersection
+                            }
+
+                    newCrashed : Cart
+                    newCrashed =
+                        CrashedCart newPosition
+
+                    withoutOld : Carts
+                    withoutOld =
+                        List.filter ((/=) cart) allCarts
+
+                    crashed : Bool
+                    crashed =
+                        List.any (\cc -> cartPosition cc == newPosition) allCarts
+                in
+                if crashed then
+                    --let
+                    --    _ =
+                    --        Debug.log "crashed!" ()
+                    --in
+                    case stopBehaviour of
+                        StopAtFirstCrash ->
+                            ( newCrashed
+                                :: (withoutOld |> List.filter (\cc -> cartPosition cc /= newPosition))
+                            , newPosition :: crashedPositions
+                            )
+
+                        StopAtLastAlive ->
+                            ( withoutOld
+                                |> List.filter (\cc -> cartPosition cc /= newPosition)
+                            , newPosition :: crashedPositions
+                            )
+
+                else
+                    ( newUncrashed :: withoutOld
+                    , crashedPositions
+                    )
 
         CrashedCart _ ->
-            allCarts
+            ( allCarts, crashedPositions )
 
 
 stepDirection : Track -> Turn -> Direction -> Direction
@@ -608,7 +630,7 @@ tests2 =
 blabla : String
 blabla =
     """
-/>-<\\
+/>>-\\
 |   |
 | /<+-\\
 | | | v
