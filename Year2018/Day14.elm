@@ -6,6 +6,7 @@ import Advent
           -- , unsafeToInt
           -- , unsafeMaybe
         )
+import Array exposing (Array)
 
 
 
@@ -17,7 +18,7 @@ type alias Input1 =
 
 
 type alias Input2 =
-    String
+    Int
 
 
 type alias Output1 =
@@ -39,7 +40,7 @@ parse1 string =
 
 parse2 : String -> Input2
 parse2 string =
-    string
+    parse1 string
 
 
 
@@ -48,26 +49,19 @@ parse2 string =
 
 compute1 : Input1 -> Output1
 compute1 input =
-    --step (input + 10) start
-    --    |> output
-    -- TODO don't compute1 for now
-    1044257397
+    step (input + 10) start
+        |> output
 
 
 compute2 : Input2 -> Output2
 compute2 input =
-    step2 input start
+    Debug.todo "done in Python :("
 
 
 output : String -> Int
 output string =
     String.right 10 string
         |> Advent.unsafeToInt
-
-
-output2 : String -> Int
-output2 string =
-    String.length string - 10
 
 
 step : Int -> ( String, Int, Int ) -> String
@@ -120,55 +114,36 @@ step neededRecipes ( state, i1, i2 ) =
         step neededRecipes ( newState, newI1, newI2 )
 
 
-step2 : String -> ( String, Int, Int ) -> Int
-step2 neededSubstring ( state, i1, i2 ) =
-    case String.indexes neededSubstring state of
-        [] ->
-            let
-                length : Int
-                length =
-                    String.length state
+get : Int -> Array Int -> Int
+get index array =
+    Array.get index array
+        |> Advent.unsafeMaybe
 
-                n1 : Int
-                n1 =
-                    state
-                        |> String.slice i1 (i1 + 1)
-                        |> Advent.unsafeToInt
 
-                n2 : Int
-                n2 =
-                    state
-                        |> String.slice i2 (i2 + 1)
-                        |> Advent.unsafeToInt
+getFromEnd : Int -> Array Int -> Int
+getFromEnd index array =
+    -- getFromEnd 0 [1,2,3] == 3
+    -- getFromEnd -1 [1,2,3] == 2
+    let
+        length =
+            Array.length array
+    in
+    Array.get (length - index - 1) array
+        |> Advent.unsafeMaybe
 
-                newNs : String
-                newNs =
-                    new n1 n2
 
-                newNsLength : Int
-                newNsLength =
-                    String.length newNs
+last : Int -> Array Int -> Array Int
+last num array =
+    let
+        length =
+            Array.length array
+    in
+    Array.slice (length - num) length array
 
-                newState : String
-                newState =
-                    state ++ newNs
 
-                newLength : Int
-                newLength =
-                    length + newNsLength
-
-                newI1 : Int
-                newI1 =
-                    (1 + n1 + i1) |> modBy newLength
-
-                newI2 : Int
-                newI2 =
-                    (1 + n2 + i2) |> modBy newLength
-            in
-            step2 neededSubstring ( newState, newI1, newI2 )
-
-        index :: _ ->
-            index
+butLast : Int -> Array Int -> Array Int
+butLast num array =
+    Array.slice 0 (Array.length array - num) array
 
 
 trim : Int -> String -> String
@@ -211,11 +186,14 @@ tests1 =
 
 tests2 : List (Test Input2 Output2)
 tests2 =
-    [ Test "example 1" "51589" "51589" 9
-    , Test "example 2" "01245" "01245" 5
-    , Test "example 3" "92510" "92510" 18
-    , Test "example 4" "59414" "59414" 2018
-    ]
+    {-
+       [ Test "example 1" "51589" (Array.fromList [ 5, 1, 5, 8, 9 ]) 9
+       , Test "example 2" "01245" (Array.fromList [ 0, 1, 2, 4, 5 ]) 5
+       , Test "example 3" "92510" (Array.fromList [ 9, 2, 5, 1, 0 ]) 18
+       , Test "example 4" "59414" (Array.fromList [ 5, 9, 4, 1, 4 ]) 2018
+       ]
+    -}
+    []
 
 
 
