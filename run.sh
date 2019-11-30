@@ -8,7 +8,7 @@ MODULE="Year${YEAR}.Day${DAY}"
 
 clear;
 tput reset;
-sysconfcpus -n 1 ./node_modules/.bin/elm make "${INPUT}" --output "${OUTPUT}" && \
+elm make "${INPUT}" --output "${OUTPUT}" && \
 echo "this.Elm.${MODULE}.init();" >>"${OUTPUT}" && \
 echo "--------------------------------------" && \
 node --max-old-space-size=12288 "${OUTPUT}";
