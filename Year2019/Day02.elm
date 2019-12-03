@@ -65,16 +65,19 @@ compute1 mem =
 
 go : Int -> Memory -> Memory
 go position mem =
-    let
-        ( maybeNewPosition, newMem ) =
-            Intcode.step parseOpcode process position mem
-    in
-    case maybeNewPosition of
-        Nothing ->
+    case Intcode.step parseOpcode process position mem of
+        Err err ->
+            let
+                _ =
+                    Debug.log "Error" err
+            in
+            Debug.todo "Crashed when stepping an Intcode program"
+
+        Ok ( Nothing, newMem ) ->
             -- we've HALTed
             newMem
 
-        Just newPosition ->
+        Ok ( Just newPosition, newMem ) ->
             go newPosition newMem
 
 
@@ -111,28 +114,30 @@ process op position mem =
             ( Nothing, mem )
 
 
-parseOpcode : Int -> Memory -> Op
+parseOpcode : Int -> Memory -> Maybe Op
 parseOpcode position mem =
     case Intcode.get position mem of
         1 ->
-            Add
-                { addr0 = Intcode.get (position + 1) mem
-                , addr1 = Intcode.get (position + 2) mem
-                , dest = Intcode.get (position + 3) mem
-                }
+            Just <|
+                Add
+                    { addr0 = Intcode.get (position + 1) mem
+                    , addr1 = Intcode.get (position + 2) mem
+                    , dest = Intcode.get (position + 3) mem
+                    }
 
         2 ->
-            Mult
-                { addr0 = Intcode.get (position + 1) mem
-                , addr1 = Intcode.get (position + 2) mem
-                , dest = Intcode.get (position + 3) mem
-                }
+            Just <|
+                Mult
+                    { addr0 = Intcode.get (position + 1) mem
+                    , addr1 = Intcode.get (position + 2) mem
+                    , dest = Intcode.get (position + 3) mem
+                    }
 
         99 ->
-            Halt
+            Just Halt
 
         _ ->
-            Halt
+            Nothing
 
 
 type Op

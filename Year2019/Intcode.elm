@@ -1,5 +1,6 @@
 module Year2019.Intcode exposing
-    ( Memory
+    ( Error(..)
+    , Memory
     , Position
     , Value
     , get
@@ -22,6 +23,13 @@ type alias Position =
 
 type alias Value =
     Int
+
+
+type Error
+    = UnknownOpcode
+        { position : Position
+        , value : Value
+        }
 
 
 {-| Needs CSV:
@@ -47,14 +55,21 @@ init list mem =
         list
 
 
-step : (Int -> Memory -> op) -> (op -> Int -> Memory -> a) -> Int -> Memory -> a
+step :
+    (Int -> Memory -> Maybe op)
+    -> (op -> Int -> Memory -> a)
+    -> Int
+    -> Memory
+    -> Result Error a
 step parseOpcode processOp position mem =
-    let
-        op : op
-        op =
-            parseOpcode position mem
-    in
-    processOp op position mem
+    parseOpcode position mem
+        |> Result.fromMaybe
+            (UnknownOpcode
+                { position = position
+                , value = get position mem
+                }
+            )
+        |> Result.map (\op -> processOp op position mem)
 
 
 get : Int -> Memory -> Int
