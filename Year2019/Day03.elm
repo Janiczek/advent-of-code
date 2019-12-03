@@ -138,7 +138,7 @@ compute1 ( w1, w2 ) =
 
 toDistance : Coord -> Int
 toDistance ( x, y ) =
-    x + y
+    abs x + abs y
 
 
 type alias NonemptyList a =
