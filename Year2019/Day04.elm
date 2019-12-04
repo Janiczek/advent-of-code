@@ -7,6 +7,7 @@ import Advent
           -- , unsafeMaybe
         )
 import List.Extra
+import Seq
 
 
 
@@ -107,8 +108,9 @@ nonemptyListToList ( x, xs ) =
 
 compute1 : Input1 -> Output1
 compute1 ( low, high ) =
-    List.range low high
-        |> List.filterMap
+    Seq.iterate ((+) 1) low
+        |> Seq.take (high - low + 1)
+        |> Seq.filterMap
             (\n ->
                 let
                     digits =
@@ -120,13 +122,14 @@ compute1 ( low, high ) =
                 else
                     Nothing
             )
-        |> List.length
+        |> Seq.length
 
 
 compute2 : Input2 -> Output2
 compute2 ( low, high ) =
-    List.range low high
-        |> List.filterMap
+    Seq.iterate ((+) 1) low
+        |> Seq.take (high - low + 1)
+        |> Seq.filterMap
             (\n ->
                 let
                     digits =
@@ -138,7 +141,7 @@ compute2 ( low, high ) =
                 else
                     Nothing
             )
-        |> List.length
+        |> Seq.length
 
 
 
