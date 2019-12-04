@@ -62,20 +62,6 @@ parse2 string =
 -- 3. COMPUTE (actually solve the problem)
 
 
-rules1 : List (List Char -> Bool)
-rules1 =
-    [ twoOrMore
-    , ruleMonotonic
-    ]
-
-
-rules2 : List (List Char -> Bool)
-rules2 =
-    [ atLeastOneTwo
-    , ruleMonotonic
-    ]
-
-
 twoOrMore : List Char -> Bool
 twoOrMore digits =
     List.Extra.group digits
@@ -94,8 +80,8 @@ atLeastOneTwo digits =
         |> (/=) 0
 
 
-ruleMonotonic : List Char -> Bool
-ruleMonotonic digits =
+monotonic : List Char -> Bool
+monotonic digits =
     List.Extra.groupWhile (<=) digits
         |> List.length
         |> (==) 1
@@ -116,7 +102,7 @@ compute1 ( low, high ) =
                     digits =
                         toChars n
                 in
-                if List.all (\rule -> rule digits) rules1 then
+                if twoOrMore digits && monotonic digits then
                     Just n
 
                 else
@@ -135,7 +121,7 @@ compute2 ( low, high ) =
                     digits =
                         toChars n
                 in
-                if List.all (\rule -> rule digits) rules2 then
+                if atLeastOneTwo digits && monotonic digits then
                     Just n
 
                 else
