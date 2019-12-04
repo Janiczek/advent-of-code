@@ -256,11 +256,13 @@ tests1 =
 #2 @ 3,1: 4x4
 #3 @ 5,5: 2x2
 #4 @ 3,3: 1x1"""
-        [ Claim 1 (Rect 1 3 4 4)
-        , Claim 2 (Rect 3 1 4 4)
-        , Claim 3 (Rect 5 5 2 2)
-        , Claim 4 (Rect 3 3 1 1)
-        ]
+        (Just
+            [ Claim 1 (Rect 1 3 4 4)
+            , Claim 2 (Rect 3 1 4 4)
+            , Claim 3 (Rect 5 5 2 2)
+            , Claim 4 (Rect 3 3 1 1)
+            ]
+        )
         4
     ]
 

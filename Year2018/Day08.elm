@@ -153,15 +153,7 @@ tests1 : List (Test Input1 Output1)
 tests1 =
     [ Test "example"
         "2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2"
-        (Node
-            [ Node [] [ 10, 11, 12 ]
-            , Node
-                [ Node [] [ 99 ]
-                ]
-                [ 2 ]
-            ]
-            [ 1, 1, 2 ]
-        )
+        Nothing
         138
     ]
 

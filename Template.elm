@@ -66,7 +66,7 @@ tests1 : List (Test Input1 Output1)
 tests1 =
     [{- Test "example"
         "input"
-        -1
+        Nothing -- Just "parsed-input"
         -1
      -}
     ]

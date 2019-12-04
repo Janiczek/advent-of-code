@@ -56,7 +56,7 @@ program { input, parse1, parse2, compute1, compute2, tests1, tests2 } =
 type alias Test input output =
     { description : String
     , input : String
-    , expectedParsedInput : input
+    , expectedParsedInput : Maybe input
     , expectedOutput : output
     }
 
@@ -70,7 +70,10 @@ runTest puzzleType parse compute { description, input, expectedParsedInput, expe
         output =
             compute parsedInput
     in
-    if parsedInput /= expectedParsedInput then
+    if
+        (expectedParsedInput /= Nothing)
+            && (expectedParsedInput /= Just parsedInput)
+    then
         Debug.todo <|
             "\nTest \""
                 ++ description
@@ -79,7 +82,7 @@ runTest puzzleType parse compute { description, input, expectedParsedInput, expe
                 ++ " failed on `parse`:\n  input:    "
                 ++ Debug.toString input
                 ++ "\n  expected: "
-                ++ Debug.toString expectedParsedInput
+                ++ Debug.toString (unsafeMaybe expectedParsedInput)
                 ++ "\n  actual:   "
                 ++ Debug.toString parsedInput
                 ++ "\n"

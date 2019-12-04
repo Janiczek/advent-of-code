@@ -253,14 +253,7 @@ Step A must be finished before step D can begin.
 Step B must be finished before step E can begin.
 Step D must be finished before step E can begin.
 Step F must be finished before step E can begin."""
-        [ Dependency 'C' 'A'
-        , Dependency 'C' 'F'
-        , Dependency 'A' 'B'
-        , Dependency 'A' 'D'
-        , Dependency 'B' 'E'
-        , Dependency 'D' 'E'
-        , Dependency 'F' 'E'
-        ]
+        Nothing
         "CABDFE"
     ]
 

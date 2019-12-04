@@ -201,12 +201,12 @@ compute2 input =
 
 tests1 : List (Test Input1 Output1)
 tests1 =
-    [ Test "example 6" "30 players; last marble is worth 5807 points" (Input1 30 5807) 37305
-    , Test "example 5" "21 players; last marble is worth 6111 points" (Input1 21 6111) 54718
-    , Test "example 4" "17 players; last marble is worth 1104 points" (Input1 17 1104) 2764
-    , Test "example 3" "13 players; last marble is worth 7999 points" (Input1 13 7999) 146373
-    , Test "example 2" "10 players; last marble is worth 1618 points" (Input1 10 1618) 8317
-    , Test "example" "9 players; last marble is worth 25 points" (Input1 9 25) 32
+    [ Test "example 6" "30 players; last marble is worth 5807 points" Nothing 37305
+    , Test "example 5" "21 players; last marble is worth 6111 points" Nothing 54718
+    , Test "example 4" "17 players; last marble is worth 1104 points" Nothing 2764
+    , Test "example 3" "13 players; last marble is worth 7999 points" Nothing 146373
+    , Test "example 2" "10 players; last marble is worth 1618 points" Nothing 8317
+    , Test "example" "9 players; last marble is worth 25 points" Nothing 32
     ]
 
 

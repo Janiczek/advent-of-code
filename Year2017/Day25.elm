@@ -5,10 +5,10 @@ import Dict exposing (Dict)
 import List.Extra
 
 
-main : Program Never ( Output, Output ) Never
+main : Program () ( Output, Output ) Never
 main =
     Advent.program
-        { input = input
+        { input = input_
         , parse1 = parse
         , parse2 = parse
         , compute1 = compute1
@@ -81,11 +81,13 @@ run : Tape -> Input -> Int
 run tape { state, stepsToChecksum, rules, position } =
     if stepsToChecksum == 0 then
         countOnes tape
+
     else
         let
             _ =
-                if stepsToChecksum % 100000 == 0 then
-                    Debug.log (toString stepsToChecksum) ( state, position )
+                if modBy 100000 stepsToChecksum == 0 then
+                    Debug.log (Debug.toString stepsToChecksum) ( state, position )
+
                 else
                     ( state, position )
 
@@ -107,7 +109,7 @@ run tape { state, stepsToChecksum, rules, position } =
                         rule.if1
 
                     _ ->
-                        Debug.crash "value other than 0/1 ????"
+                        Debug.todo "value other than 0/1 ????"
 
             newPosition =
                 move decision.moveTo position
@@ -118,12 +120,12 @@ run tape { state, stepsToChecksum, rules, position } =
             newTape =
                 tape |> Dict.insert position decision.valueToWrite
         in
-            run newTape
-                { state = newState
-                , stepsToChecksum = stepsToChecksum - 1
-                , rules = rules
-                , position = newPosition
-                }
+        run newTape
+            { state = newState
+            , stepsToChecksum = stepsToChecksum - 1
+            , rules = rules
+            , position = newPosition
+            }
 
 
 move : Direction -> Int -> Int
@@ -173,39 +175,41 @@ In state B:
     - Write the value 1.
     - Move one slot to the right.
     - Continue with state A."""
-        { state = "A"
-        , stepsToChecksum = 6
-        , position = 0
-        , rules =
-            [ ( "A"
-              , { if0 =
-                    { valueToWrite = 1
-                    , moveTo = Right
-                    , nextState = "B"
+        (Just
+            { state = "A"
+            , stepsToChecksum = 6
+            , position = 0
+            , rules =
+                [ ( "A"
+                  , { if0 =
+                        { valueToWrite = 1
+                        , moveTo = Right
+                        , nextState = "B"
+                        }
+                    , if1 =
+                        { valueToWrite = 0
+                        , moveTo = Left
+                        , nextState = "B"
+                        }
                     }
-                , if1 =
-                    { valueToWrite = 0
-                    , moveTo = Left
-                    , nextState = "B"
+                  )
+                , ( "B"
+                  , { if0 =
+                        { valueToWrite = 1
+                        , moveTo = Left
+                        , nextState = "A"
+                        }
+                    , if1 =
+                        { valueToWrite = 1
+                        , moveTo = Right
+                        , nextState = "A"
+                        }
                     }
-                }
-              )
-            , ( "B"
-              , { if0 =
-                    { valueToWrite = 1
-                    , moveTo = Left
-                    , nextState = "A"
-                    }
-                , if1 =
-                    { valueToWrite = 1
-                    , moveTo = Right
-                    , nextState = "A"
-                    }
-                }
-              )
-            ]
-                |> Dict.fromList
-        }
+                  )
+                ]
+                    |> Dict.fromList
+            }
+        )
         3
     ]
 
@@ -226,7 +230,7 @@ parse input =
             }
 
         _ ->
-            Debug.crash "wrong input!"
+            Debug.todo "wrong input!"
 
 
 parseState : String -> State
@@ -246,7 +250,7 @@ parseChecksum string =
         |> List.reverse
         |> List.drop 1
         |> List.head
-        |> Maybe.map Advent.toInt
+        |> Maybe.map Advent.unsafeToInt
         |> Advent.unsafeMaybe
 
 
@@ -283,7 +287,7 @@ parseRule ruleLines =
             )
 
         _ ->
-            Debug.crash "wrong input??"
+            Debug.todo "wrong input??"
 
 
 parseMoveTo : String -> Direction
@@ -307,7 +311,7 @@ parseDirection string =
             Right
 
         _ ->
-            Debug.crash "wrong input!"
+            Debug.todo "wrong input!"
 
 
 parseValueToWrite : String -> Int
@@ -317,12 +321,12 @@ parseValueToWrite string =
         |> String.words
         |> List.reverse
         |> List.head
-        |> Maybe.map Advent.toInt
+        |> Maybe.map Advent.unsafeToInt
         |> Advent.unsafeMaybe
 
 
-input : String
-input =
+input_ : String
+input_ =
     """Begin in state A.
 Perform a diagnostic checksum after 12523873 steps.
 

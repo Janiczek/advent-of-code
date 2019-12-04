@@ -138,23 +138,23 @@ tests1 : List (Test Input1 Output1)
 tests1 =
     [ Test "aA cancels out"
         "aA"
-        (String.toList "aA")
+        Nothing
         0
     , Test "two cancelations"
         "abBA"
-        (String.toList "abBA")
+        Nothing
         0
     , Test "nothing"
         "abAB"
-        (String.toList "abAB")
+        Nothing
         4
     , Test "nothing 2"
         "aabAAB"
-        (String.toList "aabAAB")
+        Nothing
         6
     , Test "large example"
         "dabAcCaCBAcCcaDA"
-        (String.toList "dabAcCaCBAcCcaDA")
+        Nothing
         10
     ]
 
@@ -163,7 +163,7 @@ tests2 : List (Test Input2 Output2)
 tests2 =
     [ Test "example"
         "dabAcCaCBAcCcaDA"
-        (String.toList "dabAcCaCBAcCcaDA")
+        Nothing
         4
     ]
 

@@ -106,15 +106,15 @@ tests2 : List (Test Input2 Output2)
 tests2 =
     [ Test "example"
         "+1\n-1"
-        [ 1, -1 ]
+        Nothing
         0
     , Test "example 2"
         "+3\n+3\n+4\n-2\n-4"
-        [ 3, 3, 4, -2, -4 ]
+        Nothing
         10
     , Test "example 3"
         "-6\n+3\n+8\n+5\n-6"
-        [ -6, 3, 8, 5, -6 ]
+        Nothing
         5
     ]
 
