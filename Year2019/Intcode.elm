@@ -8,8 +8,7 @@ module Year2019.Intcode exposing
     , get
     , getParam
     , init
-    , opcode1
-    , opcode3
+    , numberOfDigits
     , parse
     , parseWith
     , set
@@ -263,3 +262,17 @@ unwrapParam parameter =
 
         Position position ->
             position
+
+
+numberOfDigits : Int -> Memory -> Int
+numberOfDigits position mem =
+    numberOfDigitsHelp 0 (get position mem)
+
+
+numberOfDigitsHelp : Int -> Int -> Int
+numberOfDigitsHelp soFar n =
+    if n /= 0 then
+        numberOfDigitsHelp (soFar + 1) (n // 10)
+
+    else
+        soFar

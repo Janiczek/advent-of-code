@@ -11,6 +11,7 @@ MODULE="Year${YEAR}.Day${DAY}"
 clear;
 tput reset;
 elm make "${INPUT}" --output "${OUTPUT}" && \
-echo "try{this.Elm.${MODULE}.init();}catch(e){console.log(e.message);}" >>"${OUTPUT}" && \
+echo "this.Elm.${MODULE}.init();" >>"${OUTPUT}" && \
 echo "--------------------------------------" && \
 node --max-old-space-size=12288 "${OUTPUT}";
+#echo "try{this.Elm.${MODULE}.init();}catch(e){console.log(e.message);}" >>"${OUTPUT}" && \

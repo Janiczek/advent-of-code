@@ -64,6 +64,11 @@ type alias Test input output =
 runTest : String -> (String -> input) -> (input -> output) -> Test input output -> ()
 runTest puzzleType parse compute { description, input, expectedParsedInput, expectedOutput } =
     let
+        _ =
+            Debug.log
+                ("Running test " ++ puzzleType)
+                description
+
         parsedInput =
             parse input
 
@@ -110,7 +115,7 @@ unsafeToInt string =
     string
         |> String.toInt
         |> Result.fromMaybe "Whatever"
-        |> Result.mapError (\_ -> Debug.todo "Wrong input!")
+        |> Result.mapError (\_ -> Debug.todo "Wrong input to unsafeToInt!")
         |> Result.withDefault 0
 
 
