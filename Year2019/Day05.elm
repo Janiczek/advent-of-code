@@ -67,11 +67,7 @@ type alias Log =
     List LogEntry
 
 
-process :
-    Op
-    -> Int
-    -> Memory
-    -> ( Maybe Int, Maybe LogEntry, Memory )
+process : Op -> Int -> Memory -> ( Maybe Int, Maybe LogEntry, Memory )
 process op position mem =
     case op of
         Add { addr0, addr1, dest } ->
