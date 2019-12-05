@@ -1,4 +1,18 @@
-module Year2019.Day05 exposing (Input1, Input2, Output1, Output2, compute1, compute2, input_, main, parse1, parse2, tests1, tests2)
+module Year2019.Day05 exposing
+    ( Input1
+    , Input2
+    , Output1
+    , Output2
+    , compute1
+    , compute2
+    , input_
+    , main
+    , parse1
+    , parse2
+    , supportedOps
+    , tests1
+    , tests2
+    )
 
 import Advent
     exposing
@@ -223,79 +237,83 @@ parseOpcode1 input =
 
 parseOpcode2 : Int -> Int -> Memory -> Maybe Op
 parseOpcode2 input =
-    Intcode.parseWith
-        [ ( 1
-          , Op3
-                ( DontCare, DontCare, WantPosition )
-                (\addr0 addr1 dest ->
-                    Add
-                        { addr0 = addr0
-                        , addr1 = addr1
-                        , dest = dest
-                        }
-                )
-          )
-        , ( 2
-          , Op3
-                ( DontCare, DontCare, WantPosition )
-                (\addr0 addr1 dest ->
-                    Mult
-                        { addr0 = addr0
-                        , addr1 = addr1
-                        , dest = dest
-                        }
-                )
-          )
-        , ( 3
-          , Op1 WantPosition
-                (\dest ->
-                    SetInputAt
-                        { input = input
-                        , dest = dest
-                        }
-                )
-          )
-        , ( 4, Op1 DontCare (\addr -> Print { addr = addr }) )
-        , ( 5
-          , Op2 ( DontCare, DontCare )
-                (\test jumpTo ->
-                    JumpIfTrue
-                        { test = test
-                        , jumpTo = jumpTo
-                        }
-                )
-          )
-        , ( 6
-          , Op2 ( DontCare, DontCare )
-                (\test jumpTo ->
-                    JumpIfFalse
-                        { test = test
-                        , jumpTo = jumpTo
-                        }
-                )
-          )
-        , ( 7
-          , Op3 ( DontCare, DontCare, WantPosition )
-                (\left right dest ->
-                    LessThan
-                        { left = left
-                        , right = right
-                        , dest = dest
-                        }
-                )
-          )
-        , ( 8
-          , Op3 ( DontCare, DontCare, WantPosition )
-                (\left right dest ->
-                    Equals
-                        { left = left
-                        , right = right
-                        , dest = dest
-                        }
-                )
-          )
-        , ( 99, Op0 Halt )
-        ]
+    Intcode.parseWith (supportedOps input)
+
+
+supportedOps : Int -> List ( Int, Intcode.Op Op )
+supportedOps input =
+    [ ( 1
+      , Op3
+            ( DontCare, DontCare, WantPosition )
+            (\addr0 addr1 dest ->
+                Add
+                    { addr0 = addr0
+                    , addr1 = addr1
+                    , dest = dest
+                    }
+            )
+      )
+    , ( 2
+      , Op3
+            ( DontCare, DontCare, WantPosition )
+            (\addr0 addr1 dest ->
+                Mult
+                    { addr0 = addr0
+                    , addr1 = addr1
+                    , dest = dest
+                    }
+            )
+      )
+    , ( 3
+      , Op1 WantPosition
+            (\dest ->
+                SetInputAt
+                    { input = input
+                    , dest = dest
+                    }
+            )
+      )
+    , ( 4, Op1 DontCare (\addr -> Print { addr = addr }) )
+    , ( 5
+      , Op2 ( DontCare, DontCare )
+            (\test jumpTo ->
+                JumpIfTrue
+                    { test = test
+                    , jumpTo = jumpTo
+                    }
+            )
+      )
+    , ( 6
+      , Op2 ( DontCare, DontCare )
+            (\test jumpTo ->
+                JumpIfFalse
+                    { test = test
+                    , jumpTo = jumpTo
+                    }
+            )
+      )
+    , ( 7
+      , Op3 ( DontCare, DontCare, WantPosition )
+            (\left right dest ->
+                LessThan
+                    { left = left
+                    , right = right
+                    , dest = dest
+                    }
+            )
+      )
+    , ( 8
+      , Op3 ( DontCare, DontCare, WantPosition )
+            (\left right dest ->
+                Equals
+                    { left = left
+                    , right = right
+                    , dest = dest
+                    }
+            )
+      )
+    , ( 99, Op0 Halt )
+    ]
 
 
 type Op

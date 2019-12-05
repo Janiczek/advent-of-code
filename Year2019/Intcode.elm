@@ -8,7 +8,11 @@ module Year2019.Intcode exposing
     , get
     , getParam
     , init
+    , opcode1
+    , opcode2
+    , opcode3
     , parse
+    , parseSafe
     , parseWith
     , set
     , setParam
@@ -25,6 +29,7 @@ module Year2019.Intcode exposing
 
 import Advent
 import Array exposing (Array)
+import Maybe.Extra
 
 
 type alias Memory =
@@ -54,6 +59,15 @@ parse string =
         |> String.split ","
         |> List.map Advent.unsafeToInt
         |> Array.fromList
+
+
+parseSafe : String -> Maybe Memory
+parseSafe string =
+    string
+        |> String.split ","
+        |> List.map String.toInt
+        |> Maybe.Extra.combine
+        |> Maybe.map Array.fromList
 
 
 param : Mask -> Int -> Int -> Parameter
