@@ -8,7 +8,6 @@ module Year2019.Intcode exposing
     , get
     , getParam
     , init
-    , numberOfDigits
     , parse
     , parseWith
     , set
@@ -199,9 +198,7 @@ digit which n =
 init : List ( Int, Int ) -> Memory -> Memory
 init list mem =
     List.foldl
-        (\( position, value ) mem_ ->
-            Array.set position value mem_
-        )
+        (\( position, value ) mem_ -> set position value mem_)
         mem
         list
 
@@ -251,7 +248,7 @@ setParam parameter value mem =
             Debug.todo "Can't write to an immediate position, likely error in Mask"
 
         Position position ->
-            Array.set position value mem
+            set position value mem
 
 
 unwrapParam : Parameter -> Int
@@ -262,17 +259,3 @@ unwrapParam parameter =
 
         Position position ->
             position
-
-
-numberOfDigits : Int -> Memory -> Int
-numberOfDigits position mem =
-    numberOfDigitsHelp 0 (get position mem)
-
-
-numberOfDigitsHelp : Int -> Int -> Int
-numberOfDigitsHelp soFar n =
-    if n /= 0 then
-        numberOfDigitsHelp (soFar + 1) (n // 10)
-
-    else
-        soFar
