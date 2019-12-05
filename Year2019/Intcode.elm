@@ -177,7 +177,7 @@ parseWithHelp ( rawOpcode, opcode ) supportedOps position mem =
                             opcode3 rawOpcode masks fn position mem
 
             else
-                parseWith restOfSupportedOps position mem
+                parseWithHelp ( rawOpcode, opcode ) restOfSupportedOps position mem
 
 
 {-|
