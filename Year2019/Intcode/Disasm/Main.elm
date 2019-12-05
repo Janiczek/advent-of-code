@@ -240,6 +240,7 @@ viewString string =
         [ Events.onInput SetRawProgram
         , Attrs.cols 80
         , Attrs.rows 10
+        , Attrs.placeholder "Paste your memory (puzzle input) here!"
         , Attrs.value string
         ]
         []

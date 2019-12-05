@@ -5898,13 +5898,6 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
-var $elm$html$Html$Attributes$rows = function (n) {
-	return A2(
-		_VirtualDom_attribute,
-		'rows',
-		$elm$core$String$fromInt(n));
-};
-var $elm$html$Html$textarea = _VirtualDom_node('textarea');
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
@@ -5913,6 +5906,14 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 			key,
 			$elm$json$Json$Encode$string(string));
 	});
+var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $elm$html$Html$Attributes$rows = function (n) {
+	return A2(
+		_VirtualDom_attribute,
+		'rows',
+		$elm$core$String$fromInt(n));
+};
+var $elm$html$Html$textarea = _VirtualDom_node('textarea');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $author$project$Year2019$Intcode$Disasm$Main$viewString = function (string) {
 	return A2(
@@ -5922,6 +5923,7 @@ var $author$project$Year2019$Intcode$Disasm$Main$viewString = function (string) 
 				$elm$html$Html$Events$onInput($author$project$Year2019$Intcode$Disasm$Main$SetRawProgram),
 				$elm$html$Html$Attributes$cols(80),
 				$elm$html$Html$Attributes$rows(10),
+				$elm$html$Html$Attributes$placeholder('Paste your memory (puzzle input) here!'),
 				$elm$html$Html$Attributes$value(string)
 			]),
 		_List_Nil);
