@@ -7,7 +7,13 @@ import Advent
           -- , unsafeMaybe
         )
 import Array exposing (Array)
-import Year2019.Intcode as Intcode exposing (Memory)
+import Year2019.Intcode as Intcode
+    exposing
+        ( Mask(..)
+        , Memory
+        , Op(..)
+        , Parameter
+        )
 
 
 
@@ -87,26 +93,26 @@ process op position mem =
         Add { addr0, addr1, dest } ->
             let
                 num0 =
-                    Intcode.get addr0 mem
+                    Intcode.getParam addr0 mem
 
                 num1 =
-                    Intcode.get addr1 mem
+                    Intcode.getParam addr1 mem
 
                 newMem =
-                    Array.set dest (num0 + num1) mem
+                    Intcode.setParam dest (num0 + num1) mem
             in
             ( Just (position + 4), newMem )
 
         Mult { addr0, addr1, dest } ->
             let
                 num0 =
-                    Intcode.get addr0 mem
+                    Intcode.getParam addr0 mem
 
                 num1 =
-                    Intcode.get addr1 mem
+                    Intcode.getParam addr1 mem
 
                 newMem =
-                    Array.set dest (num0 * num1) mem
+                    Intcode.setParam dest (num0 * num1) mem
             in
             ( Just (position + 4), newMem )
 
@@ -115,34 +121,37 @@ process op position mem =
 
 
 parseOpcode : Int -> Memory -> Maybe Op
-parseOpcode position mem =
-    case Intcode.get position mem of
-        1 ->
-            Just <|
-                Add
-                    { addr0 = Intcode.get (position + 1) mem
-                    , addr1 = Intcode.get (position + 2) mem
-                    , dest = Intcode.get (position + 3) mem
-                    }
-
-        2 ->
-            Just <|
-                Mult
-                    { addr0 = Intcode.get (position + 1) mem
-                    , addr1 = Intcode.get (position + 2) mem
-                    , dest = Intcode.get (position + 3) mem
-                    }
-
-        99 ->
-            Just Halt
-
-        _ ->
-            Nothing
+parseOpcode =
+    Intcode.parseWith
+        [ ( 1
+          , Op3
+                ( DontCare, DontCare, WantPosition )
+                (\addr0 addr1 dest ->
+                    Add
+                        { addr0 = addr0
+                        , addr1 = addr1
+                        , dest = dest
+                        }
+                )
+          )
+        , ( 2
+          , Op3
+                ( DontCare, DontCare, WantPosition )
+                (\addr0 addr1 dest ->
+                    Mult
+                        { addr0 = addr0
+                        , addr1 = addr1
+                        , dest = dest
+                        }
+                )
+          )
+        , ( 99, Op0 Halt )
+        ]
 
 
 type Op
-    = Add { addr0 : Int, addr1 : Int, dest : Int }
-    | Mult { addr0 : Int, addr1 : Int, dest : Int }
+    = Add { addr0 : Parameter, addr1 : Parameter, dest : Parameter }
+    | Mult { addr0 : Parameter, addr1 : Parameter, dest : Parameter }
     | Halt
 
 
