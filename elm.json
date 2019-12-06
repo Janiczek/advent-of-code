@@ -6,11 +6,11 @@
     "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
+            "Janiczek/elm-graph": "2.0.1",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.2",
             "elm/html": "1.0.0",
             "elm-community/dict-extra": "2.4.0",
-            "elm-community/graph": "6.0.0",
             "elm-community/list-extra": "8.2.2",
             "elm-community/maybe-extra": "5.1.0",
             "lynn/elm-arithmetic": "3.0.0",
@@ -27,6 +27,9 @@
             "elm/url": "1.0.0",
             "elm/virtual-dom": "1.0.2",
             "elm-community/intdict": "3.0.0",
+            "erlandsona/assoc-set": "1.1.0",
+            "pzp1997/assoc-list": "1.0.0",
+            "skyqrose/assoc-list-extra": "1.0.0",
             "turboMaCk/any-dict": "2.1.0",
             "zwilias/elm-utf-tools": "2.0.1"
         }
