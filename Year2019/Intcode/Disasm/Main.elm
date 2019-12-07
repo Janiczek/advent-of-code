@@ -12,16 +12,11 @@ import Year2019.Intcode as Intcode exposing (Mask(..), Memory, Parameter(..))
 import Year2019.Intcode.Disasm as Disasm exposing (Data(..))
 
 
-type IntcodeProgram
-    = UnsuccessfulParse
-    | Parsed Memory
-    | ParsedAndDisassembled ( Memory, List ( Int, Data Op ) )
-
-
 type alias Model =
     { rawProgram : String
     , memory : Maybe Memory
     , disasm : Maybe (List ( Int, Data Op ))
+    , decompiled : Maybe (List ( Int, String ))
     , offset : Int
     , ops : List ( Int, Intcode.Op Op )
     }
@@ -47,6 +42,7 @@ init () =
     ( { rawProgram = ""
       , memory = Nothing
       , disasm = Nothing
+      , decompiled = Nothing
       , ops = supportedOps -- TODO allow the user to change this
       , offset = 0
       }
@@ -173,15 +169,126 @@ recalc model =
             Maybe.map
                 (\mem -> Disasm.disassembleWith model.ops (dropArray model.offset mem))
                 maybeMem
+
+        maybeDecompiled : Maybe (List ( Int, String ))
+        maybeDecompiled =
+            maybeDisassembled
+                |> Maybe.map (List.map (Tuple.mapSecond decompile))
     in
     { model
         | memory = maybeMem
         , disasm = maybeDisassembled
+        , decompiled = maybeDecompiled
     }
 
 
-twoColsStyle : List (Attribute Msg)
-twoColsStyle =
+m : Int -> String
+m n =
+    "m[" ++ String.fromInt n ++ "]"
+
+
+param : Parameter -> String
+param p =
+    case p of
+        Immediate n ->
+            String.fromInt n
+
+        Position pos ->
+            m pos
+
+
+decompile : Data Op -> String
+decompile data =
+    case data of
+        Instruction op ->
+            case op of
+                Add { addr0, addr1, dest } ->
+                    if dest == addr0 then
+                        m (Intcode.unwrapParam dest) ++ " += " ++ param addr1
+
+                    else if dest == addr1 then
+                        m (Intcode.unwrapParam dest) ++ " += " ++ param addr0
+
+                    else
+                        m (Intcode.unwrapParam dest) ++ " = " ++ param addr0 ++ " + " ++ param addr1
+
+                Mult { addr0, addr1, dest } ->
+                    if dest == addr0 then
+                        m (Intcode.unwrapParam dest) ++ " *= " ++ param addr1
+
+                    else if dest == addr1 then
+                        m (Intcode.unwrapParam dest) ++ " *= " ++ param addr0
+
+                    else
+                        m (Intcode.unwrapParam dest) ++ " = " ++ param addr0 ++ " * " ++ param addr1
+
+                SetInputAt { dest } ->
+                    m (Intcode.unwrapParam dest) ++ " = get_input()"
+
+                Print { addr } ->
+                    "print(" ++ m (Intcode.unwrapParam addr) ++ ")"
+
+                JumpIfTrue { test, jumpTo } ->
+                    case test of
+                        Immediate 0 ->
+                            "do_nothing()"
+
+                        Immediate _ ->
+                            "goto " ++ param jumpTo
+
+                        Position pos ->
+                            "if " ++ m pos ++ " /= 0:\n    goto " ++ param jumpTo
+
+                JumpIfFalse { test, jumpTo } ->
+                    case test of
+                        Immediate 0 ->
+                            "goto " ++ param jumpTo
+
+                        Immediate _ ->
+                            "do_nothing()"
+
+                        Position pos ->
+                            "if " ++ m pos ++ " == 0:\n    goto " ++ param jumpTo
+
+                LessThan { left, right, dest } ->
+                    m (Intcode.unwrapParam dest)
+                        ++ " = "
+                        ++ (case ( left, right ) of
+                                ( Immediate left_, Immediate right_ ) ->
+                                    if left_ < right_ then
+                                        "1"
+
+                                    else
+                                        "0"
+
+                                _ ->
+                                    "(1 if " ++ param left ++ " < " ++ param right ++ " else 0)"
+                           )
+
+                Equals { left, right, dest } ->
+                    m (Intcode.unwrapParam dest)
+                        ++ " = "
+                        ++ (case ( left, right ) of
+                                ( Immediate left_, Immediate right_ ) ->
+                                    if left_ == right_ then
+                                        "1"
+
+                                    else
+                                        "0"
+
+                                _ ->
+                                    "(1 if " ++ param left ++ " == " ++ param right ++ " else 0)"
+                           )
+
+                Halt ->
+                    "halt()"
+
+        Data n ->
+            "raw data " ++ String.fromInt n
+
+
+colsStyle : List (Attribute Msg)
+colsStyle =
     [ Attrs.style "display" "flex"
     , Attrs.style "flex-direction" "row"
     ]
@@ -202,9 +309,10 @@ view model =
         [ viewHeader
         , viewTextarea model.rawProgram
         , viewOffsetSlider model.offset
-        , Html.div twoColsStyle
+        , Html.div colsStyle
             [ viewMem model.memory
             , viewDisassembled model.offset model.disasm
+            , viewDecompiled model.decompiled
             ]
         ]
     }
@@ -233,12 +341,13 @@ viewOffsetSlider offset =
         stringOffset =
             String.fromInt offset
     in
-    Html.div []
+    Html.div [ Attrs.style "padding" "8px 0" ]
         [ Html.input
             [ Attrs.type_ "range"
             , Attrs.min "0"
             , Attrs.max "3"
             , Attrs.value stringOffset
+            , Attrs.style "margin-right" "8px"
             , Events.on "input" (Decode.map SetOffset Events.targetValueInt)
             ]
             []
@@ -267,9 +376,9 @@ viewMem maybeMem =
 
 
 paramToString : Parameter -> String
-paramToString param =
+paramToString param_ =
     "("
-        ++ (case param of
+        ++ (case param_ of
                 Position n ->
                     "Position " ++ String.fromInt n
 
@@ -334,3 +443,38 @@ viewDisassembled offset maybeData =
                     ]
             )
         |> Maybe.withDefault (Html.div colStyle [ Html.text "Disassembly unavailable" ])
+
+
+viewDecompiled : Maybe (List ( Int, String )) -> Html Msg
+viewDecompiled maybeDecompiled =
+    maybeDecompiled
+        |> Maybe.map
+            (\statements ->
+                Html.div []
+                    [ Html.h2 [] [ Html.text "Decompiled program" ]
+                    , Html.p [] [ Html.text "DISCLAIMER: Intcode programs might be self-modifying. This won't be accurate for all inputs." ]
+                    , Html.ul
+                        [ Attrs.style "margin-top" "16px"
+                        , Attrs.style "font-family" "monospace"
+                        ]
+                      <|
+                        List.map viewStatement statements
+                    ]
+            )
+        |> Maybe.withDefault (Html.div colStyle [ Html.text "Decompiled program unavailable" ])
+
+
+viewStatement : ( Int, String ) -> Html Msg
+viewStatement ( position, statement ) =
+    Html.li
+        [ Attrs.style "display" "flex"
+        , Attrs.style "flex-direction" "row"
+        ]
+        [ Html.div
+            [ Attrs.style "color" "#888888"
+            , Attrs.style "width" "40px"
+            , Attrs.style "margin-right" "8px"
+            ]
+            [ Html.text <| m position ]
+        , Html.pre [] [ Html.text statement ]
+        ]

@@ -5150,7 +5150,6 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$document = _Browser_document;
-var $author$project$Year2019$Intcode$Disasm$Main$UnsuccessfulParse = {$: 'UnsuccessfulParse'};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Year2019$Intcode$Disasm$Main$Add = function (a) {
@@ -5281,16 +5280,123 @@ var $author$project$Year2019$Intcode$Disasm$Main$supportedOps = _List_fromArray(
 	]);
 var $author$project$Year2019$Intcode$Disasm$Main$init = function (_v0) {
 	return _Utils_Tuple2(
-		{offset: 0, ops: $author$project$Year2019$Intcode$Disasm$Main$supportedOps, program: $author$project$Year2019$Intcode$Disasm$Main$UnsuccessfulParse, rawProgram: ''},
+		{decompiled: $elm$core$Maybe$Nothing, disasm: $elm$core$Maybe$Nothing, memory: $elm$core$Maybe$Nothing, offset: 0, ops: $author$project$Year2019$Intcode$Disasm$Main$supportedOps, rawProgram: ''},
 		$elm$core$Platform$Cmd$none);
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $author$project$Year2019$Intcode$Disasm$Main$Parsed = function (a) {
-	return {$: 'Parsed', a: a};
+var $author$project$Year2019$Intcode$Disasm$Main$m = function (n) {
+	return 'm[' + ($elm$core$String$fromInt(n) + ']');
 };
-var $author$project$Year2019$Intcode$Disasm$Main$ParsedAndDisassembled = function (a) {
-	return {$: 'ParsedAndDisassembled', a: a};
+var $author$project$Year2019$Intcode$Disasm$Main$param = function (p) {
+	if (p.$ === 'Immediate') {
+		var n = p.a;
+		return $elm$core$String$fromInt(n);
+	} else {
+		var pos = p.a;
+		return $author$project$Year2019$Intcode$Disasm$Main$m(pos);
+	}
+};
+var $author$project$Year2019$Intcode$unwrapParam = function (parameter) {
+	if (parameter.$ === 'Immediate') {
+		var n = parameter.a;
+		return n;
+	} else {
+		var position = parameter.a;
+		return position;
+	}
+};
+var $author$project$Year2019$Intcode$Disasm$Main$decompile = function (data) {
+	if (data.$ === 'Instruction') {
+		var op = data.a;
+		switch (op.$) {
+			case 'Add':
+				var addr0 = op.a.addr0;
+				var addr1 = op.a.addr1;
+				var dest = op.a.dest;
+				return _Utils_eq(dest, addr0) ? ($author$project$Year2019$Intcode$Disasm$Main$m(
+					$author$project$Year2019$Intcode$unwrapParam(dest)) + (' += ' + $author$project$Year2019$Intcode$Disasm$Main$param(addr1))) : (_Utils_eq(dest, addr1) ? ($author$project$Year2019$Intcode$Disasm$Main$m(
+					$author$project$Year2019$Intcode$unwrapParam(dest)) + (' += ' + $author$project$Year2019$Intcode$Disasm$Main$param(addr0))) : ($author$project$Year2019$Intcode$Disasm$Main$m(
+					$author$project$Year2019$Intcode$unwrapParam(dest)) + (' = ' + ($author$project$Year2019$Intcode$Disasm$Main$param(addr0) + (' + ' + $author$project$Year2019$Intcode$Disasm$Main$param(addr1))))));
+			case 'Mult':
+				var addr0 = op.a.addr0;
+				var addr1 = op.a.addr1;
+				var dest = op.a.dest;
+				return _Utils_eq(dest, addr0) ? ($author$project$Year2019$Intcode$Disasm$Main$m(
+					$author$project$Year2019$Intcode$unwrapParam(dest)) + (' *= ' + $author$project$Year2019$Intcode$Disasm$Main$param(addr1))) : (_Utils_eq(dest, addr1) ? ($author$project$Year2019$Intcode$Disasm$Main$m(
+					$author$project$Year2019$Intcode$unwrapParam(dest)) + (' *= ' + $author$project$Year2019$Intcode$Disasm$Main$param(addr0))) : ($author$project$Year2019$Intcode$Disasm$Main$m(
+					$author$project$Year2019$Intcode$unwrapParam(dest)) + (' = ' + ($author$project$Year2019$Intcode$Disasm$Main$param(addr0) + (' * ' + $author$project$Year2019$Intcode$Disasm$Main$param(addr1))))));
+			case 'SetInputAt':
+				var dest = op.a.dest;
+				return $author$project$Year2019$Intcode$Disasm$Main$m(
+					$author$project$Year2019$Intcode$unwrapParam(dest)) + ' = get_input()';
+			case 'Print':
+				var addr = op.a.addr;
+				return 'print(' + ($author$project$Year2019$Intcode$Disasm$Main$m(
+					$author$project$Year2019$Intcode$unwrapParam(addr)) + ')');
+			case 'JumpIfTrue':
+				var test = op.a.test;
+				var jumpTo = op.a.jumpTo;
+				if (test.$ === 'Immediate') {
+					if (!test.a) {
+						return 'do_nothing()';
+					} else {
+						return 'goto ' + $author$project$Year2019$Intcode$Disasm$Main$param(jumpTo);
+					}
+				} else {
+					var pos = test.a;
+					return 'if ' + ($author$project$Year2019$Intcode$Disasm$Main$m(pos) + (' /= 0:\n    goto ' + $author$project$Year2019$Intcode$Disasm$Main$param(jumpTo)));
+				}
+			case 'JumpIfFalse':
+				var test = op.a.test;
+				var jumpTo = op.a.jumpTo;
+				if (test.$ === 'Immediate') {
+					if (!test.a) {
+						return 'goto ' + $author$project$Year2019$Intcode$Disasm$Main$param(jumpTo);
+					} else {
+						return 'do_nothing()';
+					}
+				} else {
+					var pos = test.a;
+					return 'if ' + ($author$project$Year2019$Intcode$Disasm$Main$m(pos) + (' == 0:\n    goto ' + $author$project$Year2019$Intcode$Disasm$Main$param(jumpTo)));
+				}
+			case 'LessThan':
+				var left = op.a.left;
+				var right = op.a.right;
+				var dest = op.a.dest;
+				return $author$project$Year2019$Intcode$Disasm$Main$m(
+					$author$project$Year2019$Intcode$unwrapParam(dest)) + (' = ' + function () {
+					var _v4 = _Utils_Tuple2(left, right);
+					if ((_v4.a.$ === 'Immediate') && (_v4.b.$ === 'Immediate')) {
+						var left_ = _v4.a.a;
+						var right_ = _v4.b.a;
+						return (_Utils_cmp(left_, right_) < 0) ? '1' : '0';
+					} else {
+						return '(1 if ' + ($author$project$Year2019$Intcode$Disasm$Main$param(left) + (' < ' + ($author$project$Year2019$Intcode$Disasm$Main$param(right) + ' else 0)')));
+					}
+				}());
+			case 'Equals':
+				var left = op.a.left;
+				var right = op.a.right;
+				var dest = op.a.dest;
+				return $author$project$Year2019$Intcode$Disasm$Main$m(
+					$author$project$Year2019$Intcode$unwrapParam(dest)) + (' = ' + function () {
+					var _v5 = _Utils_Tuple2(left, right);
+					if ((_v5.a.$ === 'Immediate') && (_v5.b.$ === 'Immediate')) {
+						var left_ = _v5.a.a;
+						var right_ = _v5.b.a;
+						return _Utils_eq(left_, right_) ? '1' : '0';
+					} else {
+						return '(1 if ' + ($author$project$Year2019$Intcode$Disasm$Main$param(left) + (' == ' + ($author$project$Year2019$Intcode$Disasm$Main$param(right) + ' else 0)')));
+					}
+				}());
+			default:
+				return 'halt()';
+		}
+	} else {
+		var n = data.a;
+		return 'raw data ' + $elm$core$String$fromInt(n);
+	}
 };
 var $author$project$Year2019$Intcode$Disasm$Data = function (a) {
 	return {$: 'Data', a: a};
@@ -5889,6 +5995,14 @@ var $author$project$Year2019$Intcode$Disasm$Main$dropArray = F2(
 			$elm$core$Array$length(array),
 			array);
 	});
+var $elm$core$Tuple$mapSecond = F2(
+	function (func, _v0) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return _Utils_Tuple2(
+			x,
+			func(y));
+	});
 var $elm_community$maybe_extra$Maybe$Extra$combine = A2(
 	$elm$core$List$foldr,
 	$elm$core$Maybe$map2($elm$core$List$cons),
@@ -5949,32 +6063,14 @@ var $author$project$Year2019$Intcode$Disasm$Main$recalc = function (model) {
 				A2($author$project$Year2019$Intcode$Disasm$Main$dropArray, model.offset, mem));
 		},
 		maybeMem);
-	var _v0 = _Utils_Tuple2(maybeMem, maybeDisassembled);
-	if (_v0.a.$ === 'Nothing') {
-		var _v1 = _v0.a;
-		return _Utils_update(
-			model,
-			{program: $author$project$Year2019$Intcode$Disasm$Main$UnsuccessfulParse});
-	} else {
-		if (_v0.b.$ === 'Nothing') {
-			var mem = _v0.a.a;
-			var _v2 = _v0.b;
-			return _Utils_update(
-				model,
-				{
-					program: $author$project$Year2019$Intcode$Disasm$Main$Parsed(mem)
-				});
-		} else {
-			var mem = _v0.a.a;
-			var disasm = _v0.b.a;
-			return _Utils_update(
-				model,
-				{
-					program: $author$project$Year2019$Intcode$Disasm$Main$ParsedAndDisassembled(
-						_Utils_Tuple2(mem, disasm))
-				});
-		}
-	}
+	var maybeDecompiled = A2(
+		$elm$core$Maybe$map,
+		$elm$core$List$map(
+			$elm$core$Tuple$mapSecond($author$project$Year2019$Intcode$Disasm$Main$decompile)),
+		maybeDisassembled);
+	return _Utils_update(
+		model,
+		{decompiled: maybeDecompiled, disasm: maybeDisassembled, memory: maybeMem});
 };
 var $elm$core$String$replace = F3(
 	function (before, after, string) {
@@ -6015,111 +6111,215 @@ var $author$project$Year2019$Intcode$Disasm$Main$update = F2(
 	});
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
+var $author$project$Year2019$Intcode$Disasm$Main$colsStyle = _List_fromArray(
+	[
+		A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+		A2($elm$html$Html$Attributes$style, 'flex-direction', 'row')
+	]);
+var $elm$html$Html$div = _VirtualDom_node('div');
 var $author$project$Year2019$Intcode$Disasm$Main$colStyle = _List_fromArray(
 	[
 		A2($elm$html$Html$Attributes$style, 'margin-right', '8px'),
 		A2($elm$html$Html$Attributes$style, 'padding', '8px'),
 		A2($elm$html$Html$Attributes$style, 'background-color', '#eeeeee')
 	]);
-var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$html$Html$h2 = _VirtualDom_node('h2');
+var $elm$html$Html$p = _VirtualDom_node('p');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $author$project$Year2019$Intcode$Disasm$Main$twoColsStyle = _List_fromArray(
-	[
-		A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-		A2($elm$html$Html$Attributes$style, 'flex-direction', 'row')
-	]);
-var $elm$html$Html$h2 = _VirtualDom_node('h2');
-var $author$project$Year2019$Intcode$Disasm$Main$paramToString = function (param) {
-	return '(' + (function () {
-		if (param.$ === 'Position') {
-			var n = param.a;
-			return 'Position ' + $elm$core$String$fromInt(n);
-		} else {
-			var n = param.a;
-			return 'Immediate ' + $elm$core$String$fromInt(n);
-		}
-	}() + ')');
-};
+var $elm$html$Html$ul = _VirtualDom_node('ul');
+var $elm$html$Html$li = _VirtualDom_node('li');
 var $elm$html$Html$pre = _VirtualDom_node('pre');
-var $author$project$Year2019$Intcode$Disasm$Main$viewDisassembled = F2(
-	function (offset, data) {
-		return A2(
+var $author$project$Year2019$Intcode$Disasm$Main$viewStatement = function (_v0) {
+	var position = _v0.a;
+	var statement = _v0.b;
+	return A2(
+		$elm$html$Html$li,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+				A2($elm$html$Html$Attributes$style, 'flex-direction', 'row')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'color', '#888888'),
+						A2($elm$html$Html$Attributes$style, 'width', '40px'),
+						A2($elm$html$Html$Attributes$style, 'margin-right', '8px')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$author$project$Year2019$Intcode$Disasm$Main$m(position))
+					])),
+				A2(
+				$elm$html$Html$pre,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(statement)
+					]))
+			]));
+};
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $author$project$Year2019$Intcode$Disasm$Main$viewDecompiled = function (maybeDecompiled) {
+	return A2(
+		$elm$core$Maybe$withDefault,
+		A2(
 			$elm$html$Html$div,
 			$author$project$Year2019$Intcode$Disasm$Main$colStyle,
 			_List_fromArray(
 				[
-					A2(
-					$elm$html$Html$h2,
+					$elm$html$Html$text('Decompiled program unavailable')
+				])),
+		A2(
+			$elm$core$Maybe$map,
+			function (statements) {
+				return A2(
+					$elm$html$Html$div,
 					_List_Nil,
 					_List_fromArray(
 						[
-							$elm$html$Html$text('Disassembled program')
-						])),
-					A2(
-					$elm$html$Html$pre,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text(
 							A2(
-								$elm$core$String$join,
-								'\n',
+							$elm$html$Html$h2,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Decompiled program')
+								])),
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('DISCLAIMER: Intcode programs might be self-modifying. This won\'t be accurate for all inputs.')
+								])),
+							A2(
+							$elm$html$Html$ul,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$style, 'margin-top', '16px'),
+									A2($elm$html$Html$Attributes$style, 'font-family', 'monospace')
+								]),
+							A2($elm$core$List$map, $author$project$Year2019$Intcode$Disasm$Main$viewStatement, statements))
+						]));
+			},
+			maybeDecompiled));
+};
+var $author$project$Year2019$Intcode$Disasm$Main$paramToString = function (param_) {
+	return '(' + (function () {
+		if (param_.$ === 'Position') {
+			var n = param_.a;
+			return 'Position ' + $elm$core$String$fromInt(n);
+		} else {
+			var n = param_.a;
+			return 'Immediate ' + $elm$core$String$fromInt(n);
+		}
+	}() + ')');
+};
+var $author$project$Year2019$Intcode$Disasm$Main$viewDisassembled = F2(
+	function (offset, maybeData) {
+		return A2(
+			$elm$core$Maybe$withDefault,
+			A2(
+				$elm$html$Html$div,
+				$author$project$Year2019$Intcode$Disasm$Main$colStyle,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Disassembly unavailable')
+					])),
+			A2(
+				$elm$core$Maybe$map,
+				function (data) {
+					return A2(
+						$elm$html$Html$div,
+						$author$project$Year2019$Intcode$Disasm$Main$colStyle,
+						_List_fromArray(
+							[
 								A2(
-									$elm$core$List$map,
-									function (_v0) {
-										var position = _v0.a;
-										var datum = _v0.b;
-										return '[' + ($elm$core$String$fromInt(position + offset) + (']: ' + function () {
-											if (datum.$ === 'Data') {
-												var n = datum.a;
-												return 'raw data ' + $elm$core$String$fromInt(n);
-											} else {
-												var op = datum.a;
-												switch (op.$) {
-													case 'Add':
-														var addr0 = op.a.addr0;
-														var addr1 = op.a.addr1;
-														var dest = op.a.dest;
-														return 'Add ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr0) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr1) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
-													case 'Mult':
-														var addr0 = op.a.addr0;
-														var addr1 = op.a.addr1;
-														var dest = op.a.dest;
-														return 'Mult ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr0) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr1) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
-													case 'SetInputAt':
-														var dest = op.a.dest;
-														return 'SetInputAt ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest);
-													case 'Print':
-														var addr = op.a.addr;
-														return 'Print ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(addr);
-													case 'JumpIfTrue':
-														var test = op.a.test;
-														var jumpTo = op.a.jumpTo;
-														return 'JumpIfTrue ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(test) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(jumpTo)));
-													case 'JumpIfFalse':
-														var test = op.a.test;
-														var jumpTo = op.a.jumpTo;
-														return 'JumpIfFalse ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(test) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(jumpTo)));
-													case 'LessThan':
-														var left = op.a.left;
-														var right = op.a.right;
-														var dest = op.a.dest;
-														return 'LessThan ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(left) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(right) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
-													case 'Equals':
-														var left = op.a.left;
-														var right = op.a.right;
-														var dest = op.a.dest;
-														return 'Equals ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(left) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(right) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
-													default:
-														return 'Halt';
-												}
-											}
-										}()));
-									},
-									data)))
-						]))
-				]));
+								$elm$html$Html$h2,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Disassembled program')
+									])),
+								A2(
+								$elm$html$Html$pre,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										A2(
+											$elm$core$String$join,
+											'\n',
+											A2(
+												$elm$core$List$map,
+												function (_v0) {
+													var position = _v0.a;
+													var datum = _v0.b;
+													return '[' + ($elm$core$String$fromInt(position + offset) + (']: ' + function () {
+														if (datum.$ === 'Data') {
+															var n = datum.a;
+															return 'raw data ' + $elm$core$String$fromInt(n);
+														} else {
+															var op = datum.a;
+															switch (op.$) {
+																case 'Add':
+																	var addr0 = op.a.addr0;
+																	var addr1 = op.a.addr1;
+																	var dest = op.a.dest;
+																	return 'Add ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr0) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr1) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
+																case 'Mult':
+																	var addr0 = op.a.addr0;
+																	var addr1 = op.a.addr1;
+																	var dest = op.a.dest;
+																	return 'Mult ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr0) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr1) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
+																case 'SetInputAt':
+																	var dest = op.a.dest;
+																	return 'SetInputAt ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest);
+																case 'Print':
+																	var addr = op.a.addr;
+																	return 'Print ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(addr);
+																case 'JumpIfTrue':
+																	var test = op.a.test;
+																	var jumpTo = op.a.jumpTo;
+																	return 'JumpIfTrue ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(test) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(jumpTo)));
+																case 'JumpIfFalse':
+																	var test = op.a.test;
+																	var jumpTo = op.a.jumpTo;
+																	return 'JumpIfFalse ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(test) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(jumpTo)));
+																case 'LessThan':
+																	var left = op.a.left;
+																	var right = op.a.right;
+																	var dest = op.a.dest;
+																	return 'LessThan ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(left) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(right) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
+																case 'Equals':
+																	var left = op.a.left;
+																	var right = op.a.right;
+																	var dest = op.a.dest;
+																	return 'Equals ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(left) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(right) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
+																default:
+																	return 'Halt';
+															}
+														}
+													}()));
+												},
+												data)))
+									]))
+							]));
+				},
+				maybeData));
 	});
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $author$project$Year2019$Intcode$Disasm$Main$viewHeader = A2(
@@ -6129,37 +6329,51 @@ var $author$project$Year2019$Intcode$Disasm$Main$viewHeader = A2(
 		[
 			$elm$html$Html$text('Intcode Disassembler')
 		]));
-var $author$project$Year2019$Intcode$Disasm$Main$viewMem = function (mem) {
+var $author$project$Year2019$Intcode$Disasm$Main$viewMem = function (maybeMem) {
 	return A2(
-		$elm$html$Html$div,
-		$author$project$Year2019$Intcode$Disasm$Main$colStyle,
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$h2,
-				_List_Nil,
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Memory')
-					])),
-				A2(
-				$elm$html$Html$pre,
-				_List_Nil,
-				_List_fromArray(
-					[
-						$elm$html$Html$text(
-						A2(
-							$elm$core$String$join,
-							'\n',
+		$elm$core$Maybe$withDefault,
+		A2(
+			$elm$html$Html$div,
+			$author$project$Year2019$Intcode$Disasm$Main$colStyle,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Memory unavailable')
+				])),
+		A2(
+			$elm$core$Maybe$map,
+			function (mem) {
+				return A2(
+					$elm$html$Html$div,
+					$author$project$Year2019$Intcode$Disasm$Main$colStyle,
+					_List_fromArray(
+						[
 							A2(
-								$elm$core$List$indexedMap,
-								F2(
-									function (i, n) {
-										return '[' + ($elm$core$String$fromInt(i) + (']: ' + $elm$core$String$fromInt(n)));
-									}),
-								$elm$core$Array$toList(mem))))
-					]))
-			]));
+							$elm$html$Html$h2,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Memory')
+								])),
+							A2(
+							$elm$html$Html$pre,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									A2(
+										$elm$core$String$join,
+										'\n',
+										A2(
+											$elm$core$List$indexedMap,
+											F2(
+												function (i, n) {
+													return '[' + ($elm$core$String$fromInt(i) + (']: ' + $elm$core$String$fromInt(n)));
+												}),
+											$elm$core$Array$toList(mem))))
+								]))
+						]));
+			},
+			maybeMem));
 };
 var $author$project$Year2019$Intcode$Disasm$Main$SetOffset = function (a) {
 	return {$: 'SetOffset', a: a};
@@ -6203,7 +6417,10 @@ var $author$project$Year2019$Intcode$Disasm$Main$viewOffsetSlider = function (of
 	var stringOffset = $elm$core$String$fromInt(offset);
 	return A2(
 		$elm$html$Html$div,
-		_List_Nil,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'padding', '8px 0')
+			]),
 		_List_fromArray(
 			[
 				A2(
@@ -6214,6 +6431,7 @@ var $author$project$Year2019$Intcode$Disasm$Main$viewOffsetSlider = function (of
 						$elm$html$Html$Attributes$min('0'),
 						$elm$html$Html$Attributes$max('3'),
 						$elm$html$Html$Attributes$value(stringOffset),
+						A2($elm$html$Html$Attributes$style, 'margin-right', '8px'),
 						A2(
 						$elm$html$Html$Events$on,
 						'input',
@@ -6290,52 +6508,13 @@ var $author$project$Year2019$Intcode$Disasm$Main$view = function (model) {
 				$author$project$Year2019$Intcode$Disasm$Main$viewOffsetSlider(model.offset),
 				A2(
 				$elm$html$Html$div,
-				$author$project$Year2019$Intcode$Disasm$Main$twoColsStyle,
-				function () {
-					var _v0 = model.program;
-					switch (_v0.$) {
-						case 'UnsuccessfulParse':
-							return _List_fromArray(
-								[
-									A2(
-									$elm$html$Html$div,
-									$author$project$Year2019$Intcode$Disasm$Main$colStyle,
-									_List_fromArray(
-										[
-											$elm$html$Html$text('Memory unavailable')
-										])),
-									A2(
-									$elm$html$Html$div,
-									$author$project$Year2019$Intcode$Disasm$Main$colStyle,
-									_List_fromArray(
-										[
-											$elm$html$Html$text('Disassembly unavailable')
-										]))
-								]);
-						case 'Parsed':
-							var mem = _v0.a;
-							return _List_fromArray(
-								[
-									$author$project$Year2019$Intcode$Disasm$Main$viewMem(mem),
-									A2(
-									$elm$html$Html$div,
-									$author$project$Year2019$Intcode$Disasm$Main$colStyle,
-									_List_fromArray(
-										[
-											$elm$html$Html$text('Disassembly unavailable')
-										]))
-								]);
-						default:
-							var _v1 = _v0.a;
-							var mem = _v1.a;
-							var disasm = _v1.b;
-							return _List_fromArray(
-								[
-									$author$project$Year2019$Intcode$Disasm$Main$viewMem(mem),
-									A2($author$project$Year2019$Intcode$Disasm$Main$viewDisassembled, model.offset, disasm)
-								]);
-					}
-				}())
+				$author$project$Year2019$Intcode$Disasm$Main$colsStyle,
+				_List_fromArray(
+					[
+						$author$project$Year2019$Intcode$Disasm$Main$viewMem(model.memory),
+						A2($author$project$Year2019$Intcode$Disasm$Main$viewDisassembled, model.offset, model.disasm),
+						$author$project$Year2019$Intcode$Disasm$Main$viewDecompiled(model.decompiled)
+					]))
 			]),
 		title: 'Intcode Disassembler'
 	};
