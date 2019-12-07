@@ -5150,9 +5150,7 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$document = _Browser_document;
-var $author$project$Year2019$Intcode$Disasm$Main$Raw = function (a) {
-	return {$: 'Raw', a: a};
-};
+var $author$project$Year2019$Intcode$Disasm$Main$UnsuccessfulParse = {$: 'UnsuccessfulParse'};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Year2019$Intcode$Disasm$Main$Add = function (a) {
@@ -5283,10 +5281,7 @@ var $author$project$Year2019$Intcode$Disasm$Main$supportedOps = _List_fromArray(
 	]);
 var $author$project$Year2019$Intcode$Disasm$Main$init = function (_v0) {
 	return _Utils_Tuple2(
-		{
-			ops: $author$project$Year2019$Intcode$Disasm$Main$supportedOps,
-			program: $author$project$Year2019$Intcode$Disasm$Main$Raw('')
-		},
+		{offset: 0, ops: $author$project$Year2019$Intcode$Disasm$Main$supportedOps, program: $author$project$Year2019$Intcode$Disasm$Main$UnsuccessfulParse, rawProgram: ''},
 		$elm$core$Platform$Cmd$none);
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
@@ -5303,6 +5298,16 @@ var $author$project$Year2019$Intcode$Disasm$Data = function (a) {
 var $author$project$Year2019$Intcode$Disasm$Instruction = function (a) {
 	return {$: 'Instruction', a: a};
 };
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
 var $elm$core$Basics$modBy = _Basics_modBy;
 var $elm$core$Basics$pow = _Basics_pow;
 var $author$project$Year2019$Intcode$digit = F2(
@@ -5354,24 +5359,9 @@ var $elm$core$Array$get = F2(
 			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
 			A3($elm$core$Array$getHelp, startShift, index, tree)));
 	});
-var $elm$core$Debug$todo = _Debug_todo;
-var $author$project$Advent$unsafeMaybe = function (maybe) {
-	if (maybe.$ === 'Just') {
-		var x = maybe.a;
-		return x;
-	} else {
-		return _Debug_todo(
-			'Advent',
-			{
-				start: {line: 129, column: 13},
-				end: {line: 129, column: 23}
-			})('unsafeMaybe');
-	}
-};
-var $author$project$Year2019$Intcode$get = F2(
+var $author$project$Year2019$Intcode$getSafe = F2(
 	function (position, mem) {
-		return $author$project$Advent$unsafeMaybe(
-			A2($elm$core$Array$get, position, mem));
+		return A2($elm$core$Array$get, position, mem);
 	});
 var $author$project$Year2019$Intcode$Immediate = function (a) {
 	return {$: 'Immediate', a: a};
@@ -5379,6 +5369,7 @@ var $author$project$Year2019$Intcode$Immediate = function (a) {
 var $author$project$Year2019$Intcode$Position = function (a) {
 	return {$: 'Position', a: a};
 };
+var $elm$core$Debug$todo = _Debug_todo;
 var $author$project$Year2019$Intcode$param = F3(
 	function (mask, mode, rawParam) {
 		var _v0 = _Utils_Tuple2(mode, mask);
@@ -5397,65 +5388,114 @@ var $author$project$Year2019$Intcode$param = F3(
 					return _Debug_todo(
 						'Year2019.Intcode',
 						{
-							start: {line: 86, column: 13},
-							end: {line: 86, column: 23}
+							start: {line: 92, column: 13},
+							end: {line: 92, column: 23}
 						})(
 						'Couldn\'t parse param mode ' + $elm$core$String$fromInt(mode));
 			}
 		}
 	});
-var $author$project$Year2019$Intcode$opcode1 = F5(
+var $author$project$Year2019$Intcode$opcodeSafe1 = F5(
 	function (rawOpcode, mask, fn, position, mem) {
-		var rawParam = A2($author$project$Year2019$Intcode$get, position + 1, mem);
-		var parameter = A3(
-			$author$project$Year2019$Intcode$param,
-			mask,
-			A2($author$project$Year2019$Intcode$digit, 2, rawOpcode),
-			rawParam);
-		return fn(parameter);
+		return A2(
+			$elm$core$Maybe$map,
+			function (rawParam) {
+				var parameter = A3(
+					$author$project$Year2019$Intcode$param,
+					mask,
+					A2($author$project$Year2019$Intcode$digit, 2, rawOpcode),
+					rawParam);
+				return fn(parameter);
+			},
+			A2($author$project$Year2019$Intcode$getSafe, position + 1, mem));
 	});
-var $author$project$Year2019$Intcode$opcode2 = F5(
+var $elm$core$Maybe$map2 = F3(
+	function (func, ma, mb) {
+		if (ma.$ === 'Nothing') {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var a = ma.a;
+			if (mb.$ === 'Nothing') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var b = mb.a;
+				return $elm$core$Maybe$Just(
+					A2(func, a, b));
+			}
+		}
+	});
+var $author$project$Year2019$Intcode$opcodeSafe2 = F5(
 	function (rawOpcode, _v0, fn, position, mem) {
 		var mask1 = _v0.a;
 		var mask2 = _v0.b;
-		var rawParam2 = A2($author$project$Year2019$Intcode$get, position + 2, mem);
-		var rawParam1 = A2($author$project$Year2019$Intcode$get, position + 1, mem);
-		var parameter2 = A3(
-			$author$project$Year2019$Intcode$param,
-			mask2,
-			A2($author$project$Year2019$Intcode$digit, 3, rawOpcode),
-			rawParam2);
-		var parameter1 = A3(
-			$author$project$Year2019$Intcode$param,
-			mask1,
-			A2($author$project$Year2019$Intcode$digit, 2, rawOpcode),
-			rawParam1);
-		return A2(fn, parameter1, parameter2);
+		return A3(
+			$elm$core$Maybe$map2,
+			F2(
+				function (rawParam1, rawParam2) {
+					var parameter2 = A3(
+						$author$project$Year2019$Intcode$param,
+						mask2,
+						A2($author$project$Year2019$Intcode$digit, 3, rawOpcode),
+						rawParam2);
+					var parameter1 = A3(
+						$author$project$Year2019$Intcode$param,
+						mask1,
+						A2($author$project$Year2019$Intcode$digit, 2, rawOpcode),
+						rawParam1);
+					return A2(fn, parameter1, parameter2);
+				}),
+			A2($author$project$Year2019$Intcode$getSafe, position + 1, mem),
+			A2($author$project$Year2019$Intcode$getSafe, position + 2, mem));
 	});
-var $author$project$Year2019$Intcode$opcode3 = F5(
+var $elm$core$Maybe$map3 = F4(
+	function (func, ma, mb, mc) {
+		if (ma.$ === 'Nothing') {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var a = ma.a;
+			if (mb.$ === 'Nothing') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var b = mb.a;
+				if (mc.$ === 'Nothing') {
+					return $elm$core$Maybe$Nothing;
+				} else {
+					var c = mc.a;
+					return $elm$core$Maybe$Just(
+						A3(func, a, b, c));
+				}
+			}
+		}
+	});
+var $author$project$Year2019$Intcode$opcodeSafe3 = F5(
 	function (rawOpcode, _v0, fn, position, mem) {
 		var mask1 = _v0.a;
 		var mask2 = _v0.b;
 		var mask3 = _v0.c;
-		var rawParam3 = A2($author$project$Year2019$Intcode$get, position + 3, mem);
-		var rawParam2 = A2($author$project$Year2019$Intcode$get, position + 2, mem);
-		var rawParam1 = A2($author$project$Year2019$Intcode$get, position + 1, mem);
-		var parameter3 = A3(
-			$author$project$Year2019$Intcode$param,
-			mask3,
-			A2($author$project$Year2019$Intcode$digit, 4, rawOpcode),
-			rawParam3);
-		var parameter2 = A3(
-			$author$project$Year2019$Intcode$param,
-			mask2,
-			A2($author$project$Year2019$Intcode$digit, 3, rawOpcode),
-			rawParam2);
-		var parameter1 = A3(
-			$author$project$Year2019$Intcode$param,
-			mask1,
-			A2($author$project$Year2019$Intcode$digit, 2, rawOpcode),
-			rawParam1);
-		return A3(fn, parameter1, parameter2, parameter3);
+		return A4(
+			$elm$core$Maybe$map3,
+			F3(
+				function (rawParam1, rawParam2, rawParam3) {
+					var parameter3 = A3(
+						$author$project$Year2019$Intcode$param,
+						mask3,
+						A2($author$project$Year2019$Intcode$digit, 4, rawOpcode),
+						rawParam3);
+					var parameter2 = A3(
+						$author$project$Year2019$Intcode$param,
+						mask2,
+						A2($author$project$Year2019$Intcode$digit, 3, rawOpcode),
+						rawParam2);
+					var parameter1 = A3(
+						$author$project$Year2019$Intcode$param,
+						mask1,
+						A2($author$project$Year2019$Intcode$digit, 2, rawOpcode),
+						rawParam1);
+					return A3(fn, parameter1, parameter2, parameter3);
+				}),
+			A2($author$project$Year2019$Intcode$getSafe, position + 1, mem),
+			A2($author$project$Year2019$Intcode$getSafe, position + 2, mem),
+			A2($author$project$Year2019$Intcode$getSafe, position + 3, mem));
 	});
 var $author$project$Year2019$Intcode$Disasm$disassembleOneHelp = F4(
 	function (_v0, supportedOps, position, mem) {
@@ -5471,28 +5511,30 @@ var $author$project$Year2019$Intcode$Disasm$disassembleOneHelp = F4(
 				var op = _v2.b;
 				var restOfSupportedOps = supportedOps.b;
 				if (_Utils_eq(opcode, wantedOpcode)) {
-					return $elm$core$Maybe$Just(
-						_Utils_Tuple2(
-							function () {
-								switch (op.$) {
-									case 'Op0':
-										var a = op.a;
-										return a;
-									case 'Op1':
-										var mask = op.a;
-										var fn = op.b;
-										return A5($author$project$Year2019$Intcode$opcode1, rawOpcode, mask, fn, position, mem);
-									case 'Op2':
-										var masks = op.a;
-										var fn = op.b;
-										return A5($author$project$Year2019$Intcode$opcode2, rawOpcode, masks, fn, position, mem);
-									default:
-										var masks = op.a;
-										var fn = op.b;
-										return A5($author$project$Year2019$Intcode$opcode3, rawOpcode, masks, fn, position, mem);
-								}
-							}(),
-							op));
+					return A2(
+						$elm$core$Maybe$map,
+						function (parsedOp) {
+							return _Utils_Tuple2(parsedOp, op);
+						},
+						function () {
+							switch (op.$) {
+								case 'Op0':
+									var a = op.a;
+									return $elm$core$Maybe$Just(a);
+								case 'Op1':
+									var mask = op.a;
+									var fn = op.b;
+									return A5($author$project$Year2019$Intcode$opcodeSafe1, rawOpcode, mask, fn, position, mem);
+								case 'Op2':
+									var masks = op.a;
+									var fn = op.b;
+									return A5($author$project$Year2019$Intcode$opcodeSafe2, rawOpcode, masks, fn, position, mem);
+								default:
+									var masks = op.a;
+									var fn = op.b;
+									return A5($author$project$Year2019$Intcode$opcodeSafe3, rawOpcode, masks, fn, position, mem);
+							}
+						}());
 				} else {
 					var $temp$_v0 = _Utils_Tuple2(rawOpcode, opcode),
 						$temp$supportedOps = restOfSupportedOps,
@@ -5506,6 +5548,24 @@ var $author$project$Year2019$Intcode$Disasm$disassembleOneHelp = F4(
 				}
 			}
 		}
+	});
+var $author$project$Advent$unsafeMaybe = function (maybe) {
+	if (maybe.$ === 'Just') {
+		var x = maybe.a;
+		return x;
+	} else {
+		return _Debug_todo(
+			'Advent',
+			{
+				start: {line: 129, column: 13},
+				end: {line: 129, column: 23}
+			})('unsafeMaybe');
+	}
+};
+var $author$project$Year2019$Intcode$get = F2(
+	function (position, mem) {
+		return $author$project$Advent$unsafeMaybe(
+			A2($elm$core$Array$get, position, mem));
 	});
 var $author$project$Year2019$Intcode$Disasm$disassembleOne = F3(
 	function (supportedOps, position, mem) {
@@ -5597,45 +5657,237 @@ var $author$project$Year2019$Intcode$Disasm$disassembleWith = F2(
 			$elm$core$Array$length(mem),
 			mem);
 	});
-var $author$project$Year2019$Intcode$Disasm$Main$getRawProgram = function (program) {
-	switch (program.$) {
-		case 'Raw':
-			var p = program.a;
-			return p;
-		case 'Parsed':
-			var _v1 = program.a;
-			var p = _v1.a;
-			return p;
-		default:
-			var _v2 = program.a;
-			var p = _v2.a;
-			return p;
-	}
-};
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
+var $elm$core$Elm$JsArray$appendN = _JsArray_appendN;
+var $elm$core$Elm$JsArray$slice = _JsArray_slice;
+var $elm$core$Array$appendHelpBuilder = F2(
+	function (tail, builder) {
+		var tailLen = $elm$core$Elm$JsArray$length(tail);
+		var notAppended = ($elm$core$Array$branchFactor - $elm$core$Elm$JsArray$length(builder.tail)) - tailLen;
+		var appended = A3($elm$core$Elm$JsArray$appendN, $elm$core$Array$branchFactor, builder.tail, tail);
+		return (notAppended < 0) ? {
+			nodeList: A2(
+				$elm$core$List$cons,
+				$elm$core$Array$Leaf(appended),
+				builder.nodeList),
+			nodeListSize: builder.nodeListSize + 1,
+			tail: A3($elm$core$Elm$JsArray$slice, notAppended, tailLen, tail)
+		} : ((!notAppended) ? {
+			nodeList: A2(
+				$elm$core$List$cons,
+				$elm$core$Array$Leaf(appended),
+				builder.nodeList),
+			nodeListSize: builder.nodeListSize + 1,
+			tail: $elm$core$Elm$JsArray$empty
+		} : {nodeList: builder.nodeList, nodeListSize: builder.nodeListSize, tail: appended});
 	});
-var $elm$core$Maybe$map2 = F3(
-	function (func, ma, mb) {
-		if (ma.$ === 'Nothing') {
-			return $elm$core$Maybe$Nothing;
-		} else {
-			var a = ma.a;
-			if (mb.$ === 'Nothing') {
-				return $elm$core$Maybe$Nothing;
+var $elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
 			} else {
-				var b = mb.a;
-				return $elm$core$Maybe$Just(
-					A2(func, a, b));
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
 			}
 		}
+	});
+var $elm$core$Array$sliceLeft = F2(
+	function (from, array) {
+		var len = array.a;
+		var tree = array.c;
+		var tail = array.d;
+		if (!from) {
+			return array;
+		} else {
+			if (_Utils_cmp(
+				from,
+				$elm$core$Array$tailIndex(len)) > -1) {
+				return A4(
+					$elm$core$Array$Array_elm_builtin,
+					len - from,
+					$elm$core$Array$shiftStep,
+					$elm$core$Elm$JsArray$empty,
+					A3(
+						$elm$core$Elm$JsArray$slice,
+						from - $elm$core$Array$tailIndex(len),
+						$elm$core$Elm$JsArray$length(tail),
+						tail));
+			} else {
+				var skipNodes = (from / $elm$core$Array$branchFactor) | 0;
+				var helper = F2(
+					function (node, acc) {
+						if (node.$ === 'SubTree') {
+							var subTree = node.a;
+							return A3($elm$core$Elm$JsArray$foldr, helper, acc, subTree);
+						} else {
+							var leaf = node.a;
+							return A2($elm$core$List$cons, leaf, acc);
+						}
+					});
+				var leafNodes = A3(
+					$elm$core$Elm$JsArray$foldr,
+					helper,
+					_List_fromArray(
+						[tail]),
+					tree);
+				var nodesToInsert = A2($elm$core$List$drop, skipNodes, leafNodes);
+				if (!nodesToInsert.b) {
+					return $elm$core$Array$empty;
+				} else {
+					var head = nodesToInsert.a;
+					var rest = nodesToInsert.b;
+					var firstSlice = from - (skipNodes * $elm$core$Array$branchFactor);
+					var initialBuilder = {
+						nodeList: _List_Nil,
+						nodeListSize: 0,
+						tail: A3(
+							$elm$core$Elm$JsArray$slice,
+							firstSlice,
+							$elm$core$Elm$JsArray$length(head),
+							head)
+					};
+					return A2(
+						$elm$core$Array$builderToArray,
+						true,
+						A3($elm$core$List$foldl, $elm$core$Array$appendHelpBuilder, initialBuilder, rest));
+				}
+			}
+		}
+	});
+var $elm$core$Array$fetchNewTail = F4(
+	function (shift, end, treeEnd, tree) {
+		fetchNewTail:
+		while (true) {
+			var pos = $elm$core$Array$bitMask & (treeEnd >>> shift);
+			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
+			if (_v0.$ === 'SubTree') {
+				var sub = _v0.a;
+				var $temp$shift = shift - $elm$core$Array$shiftStep,
+					$temp$end = end,
+					$temp$treeEnd = treeEnd,
+					$temp$tree = sub;
+				shift = $temp$shift;
+				end = $temp$end;
+				treeEnd = $temp$treeEnd;
+				tree = $temp$tree;
+				continue fetchNewTail;
+			} else {
+				var values = _v0.a;
+				return A3($elm$core$Elm$JsArray$slice, 0, $elm$core$Array$bitMask & end, values);
+			}
+		}
+	});
+var $elm$core$Array$hoistTree = F3(
+	function (oldShift, newShift, tree) {
+		hoistTree:
+		while (true) {
+			if ((_Utils_cmp(oldShift, newShift) < 1) || (!$elm$core$Elm$JsArray$length(tree))) {
+				return tree;
+			} else {
+				var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, 0, tree);
+				if (_v0.$ === 'SubTree') {
+					var sub = _v0.a;
+					var $temp$oldShift = oldShift - $elm$core$Array$shiftStep,
+						$temp$newShift = newShift,
+						$temp$tree = sub;
+					oldShift = $temp$oldShift;
+					newShift = $temp$newShift;
+					tree = $temp$tree;
+					continue hoistTree;
+				} else {
+					return tree;
+				}
+			}
+		}
+	});
+var $elm$core$Elm$JsArray$unsafeSet = _JsArray_unsafeSet;
+var $elm$core$Array$sliceTree = F3(
+	function (shift, endIdx, tree) {
+		var lastPos = $elm$core$Array$bitMask & (endIdx >>> shift);
+		var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, lastPos, tree);
+		if (_v0.$ === 'SubTree') {
+			var sub = _v0.a;
+			var newSub = A3($elm$core$Array$sliceTree, shift - $elm$core$Array$shiftStep, endIdx, sub);
+			return (!$elm$core$Elm$JsArray$length(newSub)) ? A3($elm$core$Elm$JsArray$slice, 0, lastPos, tree) : A3(
+				$elm$core$Elm$JsArray$unsafeSet,
+				lastPos,
+				$elm$core$Array$SubTree(newSub),
+				A3($elm$core$Elm$JsArray$slice, 0, lastPos + 1, tree));
+		} else {
+			return A3($elm$core$Elm$JsArray$slice, 0, lastPos, tree);
+		}
+	});
+var $elm$core$Array$sliceRight = F2(
+	function (end, array) {
+		var len = array.a;
+		var startShift = array.b;
+		var tree = array.c;
+		var tail = array.d;
+		if (_Utils_eq(end, len)) {
+			return array;
+		} else {
+			if (_Utils_cmp(
+				end,
+				$elm$core$Array$tailIndex(len)) > -1) {
+				return A4(
+					$elm$core$Array$Array_elm_builtin,
+					end,
+					startShift,
+					tree,
+					A3($elm$core$Elm$JsArray$slice, 0, $elm$core$Array$bitMask & end, tail));
+			} else {
+				var endIdx = $elm$core$Array$tailIndex(end);
+				var depth = $elm$core$Basics$floor(
+					A2(
+						$elm$core$Basics$logBase,
+						$elm$core$Array$branchFactor,
+						A2($elm$core$Basics$max, 1, endIdx - 1)));
+				var newShift = A2($elm$core$Basics$max, 5, depth * $elm$core$Array$shiftStep);
+				return A4(
+					$elm$core$Array$Array_elm_builtin,
+					end,
+					newShift,
+					A3(
+						$elm$core$Array$hoistTree,
+						startShift,
+						newShift,
+						A3($elm$core$Array$sliceTree, startShift, endIdx, tree)),
+					A4($elm$core$Array$fetchNewTail, startShift, end, endIdx, tree));
+			}
+		}
+	});
+var $elm$core$Array$translateIndex = F2(
+	function (index, _v0) {
+		var len = _v0.a;
+		var posIndex = (index < 0) ? (len + index) : index;
+		return (posIndex < 0) ? 0 : ((_Utils_cmp(posIndex, len) > 0) ? len : posIndex);
+	});
+var $elm$core$Array$slice = F3(
+	function (from, to, array) {
+		var correctTo = A2($elm$core$Array$translateIndex, to, array);
+		var correctFrom = A2($elm$core$Array$translateIndex, from, array);
+		return (_Utils_cmp(correctFrom, correctTo) > 0) ? $elm$core$Array$empty : A2(
+			$elm$core$Array$sliceLeft,
+			correctFrom,
+			A2($elm$core$Array$sliceRight, correctTo, array));
+	});
+var $author$project$Year2019$Intcode$Disasm$Main$dropArray = F2(
+	function (n, array) {
+		return A3(
+			$elm$core$Array$slice,
+			n,
+			$elm$core$Array$length(array),
+			array);
 	});
 var $elm_community$maybe_extra$Maybe$Extra$combine = A2(
 	$elm$core$List$foldr,
@@ -5687,16 +5939,22 @@ var $author$project$Year2019$Intcode$parseSafe = function (string) {
 				A2($elm$core$String$split, ',', string))));
 };
 var $author$project$Year2019$Intcode$Disasm$Main$recalc = function (model) {
-	var rawProgram = $author$project$Year2019$Intcode$Disasm$Main$getRawProgram(model.program);
-	var maybeMem = $author$project$Year2019$Intcode$parseSafe(rawProgram);
+	var maybeMem = $author$project$Year2019$Intcode$parseSafe(model.rawProgram);
 	var maybeDisassembled = A2(
 		$elm$core$Maybe$map,
-		$author$project$Year2019$Intcode$Disasm$disassembleWith(model.ops),
+		function (mem) {
+			return A2(
+				$author$project$Year2019$Intcode$Disasm$disassembleWith,
+				model.ops,
+				A2($author$project$Year2019$Intcode$Disasm$Main$dropArray, model.offset, mem));
+		},
 		maybeMem);
 	var _v0 = _Utils_Tuple2(maybeMem, maybeDisassembled);
 	if (_v0.a.$ === 'Nothing') {
 		var _v1 = _v0.a;
-		return model;
+		return _Utils_update(
+			model,
+			{program: $author$project$Year2019$Intcode$Disasm$Main$UnsuccessfulParse});
 	} else {
 		if (_v0.b.$ === 'Nothing') {
 			var mem = _v0.a.a;
@@ -5704,17 +5962,16 @@ var $author$project$Year2019$Intcode$Disasm$Main$recalc = function (model) {
 			return _Utils_update(
 				model,
 				{
-					program: $author$project$Year2019$Intcode$Disasm$Main$Parsed(
-						_Utils_Tuple2(rawProgram, mem))
+					program: $author$project$Year2019$Intcode$Disasm$Main$Parsed(mem)
 				});
 		} else {
 			var mem = _v0.a.a;
-			var disassembled = _v0.b.a;
+			var disasm = _v0.b.a;
 			return _Utils_update(
 				model,
 				{
 					program: $author$project$Year2019$Intcode$Disasm$Main$ParsedAndDisassembled(
-						_Utils_Tuple3(rawProgram, mem, disassembled))
+						_Utils_Tuple2(mem, disasm))
 				});
 		}
 	}
@@ -5730,13 +5987,13 @@ var $author$project$Year2019$Intcode$Disasm$Main$update = F2(
 	function (msg, model) {
 		return _Utils_Tuple2(
 			function () {
-				var string = msg.a;
-				return $author$project$Year2019$Intcode$Disasm$Main$recalc(
-					_Utils_update(
-						model,
-						{
-							program: $author$project$Year2019$Intcode$Disasm$Main$Raw(
-								A3(
+				if (msg.$ === 'SetRawProgram') {
+					var string = msg.a;
+					return $author$project$Year2019$Intcode$Disasm$Main$recalc(
+						_Utils_update(
+							model,
+							{
+								rawProgram: A3(
 									$elm$core$String$replace,
 									' ',
 									'',
@@ -5744,21 +6001,35 @@ var $author$project$Year2019$Intcode$Disasm$Main$update = F2(
 										$elm$core$String$replace,
 										'\t',
 										'',
-										A3($elm$core$String$replace, '\n', '', string))))
-						}));
+										A3($elm$core$String$replace, '\n', '', string)))
+							}));
+				} else {
+					var offset = msg.a;
+					return $author$project$Year2019$Intcode$Disasm$Main$recalc(
+						_Utils_update(
+							model,
+							{offset: offset}));
+				}
 			}(),
 			$elm$core$Platform$Cmd$none);
 	});
+var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
+var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
+var $author$project$Year2019$Intcode$Disasm$Main$colStyle = _List_fromArray(
+	[
+		A2($elm$html$Html$Attributes$style, 'margin-right', '8px'),
+		A2($elm$html$Html$Attributes$style, 'padding', '8px'),
+		A2($elm$html$Html$Attributes$style, 'background-color', '#eeeeee')
+	]);
 var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
-var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $author$project$Year2019$Intcode$Disasm$Main$twoColsStyle = _List_fromArray(
 	[
 		A2($elm$html$Html$Attributes$style, 'display', 'flex'),
 		A2($elm$html$Html$Attributes$style, 'flex-direction', 'row')
 	]);
+var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $author$project$Year2019$Intcode$Disasm$Main$paramToString = function (param) {
 	return '(' + (function () {
 		if (param.$ === 'Position') {
@@ -5771,88 +6042,185 @@ var $author$project$Year2019$Intcode$Disasm$Main$paramToString = function (param
 	}() + ')');
 };
 var $elm$html$Html$pre = _VirtualDom_node('pre');
-var $author$project$Year2019$Intcode$Disasm$Main$viewDisassembled = function (data) {
-	return A2(
-		$elm$html$Html$pre,
-		_List_Nil,
-		_List_fromArray(
-			[
-				$elm$html$Html$text(
-				A2(
-					$elm$core$String$join,
-					'\n',
+var $author$project$Year2019$Intcode$Disasm$Main$viewDisassembled = F2(
+	function (offset, data) {
+		return A2(
+			$elm$html$Html$div,
+			$author$project$Year2019$Intcode$Disasm$Main$colStyle,
+			_List_fromArray(
+				[
 					A2(
-						$elm$core$List$map,
-						function (_v0) {
-							var position = _v0.a;
-							var datum = _v0.b;
-							return '[' + ($elm$core$String$fromInt(position) + (']: ' + function () {
-								if (datum.$ === 'Data') {
-									var n = datum.a;
-									return 'raw data ' + $elm$core$String$fromInt(n);
-								} else {
-									var op = datum.a;
-									switch (op.$) {
-										case 'Add':
-											var addr0 = op.a.addr0;
-											var addr1 = op.a.addr1;
-											var dest = op.a.dest;
-											return 'Add ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr0) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr1) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
-										case 'Mult':
-											var addr0 = op.a.addr0;
-											var addr1 = op.a.addr1;
-											var dest = op.a.dest;
-											return 'Mult ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr0) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr1) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
-										case 'SetInputAt':
-											var dest = op.a.dest;
-											return 'SetInputAt ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest);
-										case 'Print':
-											var addr = op.a.addr;
-											return 'Print ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(addr);
-										case 'JumpIfTrue':
-											var test = op.a.test;
-											var jumpTo = op.a.jumpTo;
-											return 'JumpIfTrue ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(test) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(jumpTo)));
-										case 'JumpIfFalse':
-											var test = op.a.test;
-											var jumpTo = op.a.jumpTo;
-											return 'JumpIfFalse ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(test) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(jumpTo)));
-										case 'LessThan':
-											var left = op.a.left;
-											var right = op.a.right;
-											var dest = op.a.dest;
-											return 'LessThan ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(left) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(right) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
-										case 'Equals':
-											var left = op.a.left;
-											var right = op.a.right;
-											var dest = op.a.dest;
-											return 'Equals ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(left) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(right) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
-										default:
-											return 'Halt';
-									}
-								}
-							}()));
-						},
-						data)))
-			]));
-};
+					$elm$html$Html$h2,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Disassembled program')
+						])),
+					A2(
+					$elm$html$Html$pre,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text(
+							A2(
+								$elm$core$String$join,
+								'\n',
+								A2(
+									$elm$core$List$map,
+									function (_v0) {
+										var position = _v0.a;
+										var datum = _v0.b;
+										return '[' + ($elm$core$String$fromInt(position + offset) + (']: ' + function () {
+											if (datum.$ === 'Data') {
+												var n = datum.a;
+												return 'raw data ' + $elm$core$String$fromInt(n);
+											} else {
+												var op = datum.a;
+												switch (op.$) {
+													case 'Add':
+														var addr0 = op.a.addr0;
+														var addr1 = op.a.addr1;
+														var dest = op.a.dest;
+														return 'Add ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr0) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr1) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
+													case 'Mult':
+														var addr0 = op.a.addr0;
+														var addr1 = op.a.addr1;
+														var dest = op.a.dest;
+														return 'Mult ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr0) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(addr1) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
+													case 'SetInputAt':
+														var dest = op.a.dest;
+														return 'SetInputAt ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest);
+													case 'Print':
+														var addr = op.a.addr;
+														return 'Print ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(addr);
+													case 'JumpIfTrue':
+														var test = op.a.test;
+														var jumpTo = op.a.jumpTo;
+														return 'JumpIfTrue ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(test) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(jumpTo)));
+													case 'JumpIfFalse':
+														var test = op.a.test;
+														var jumpTo = op.a.jumpTo;
+														return 'JumpIfFalse ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(test) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(jumpTo)));
+													case 'LessThan':
+														var left = op.a.left;
+														var right = op.a.right;
+														var dest = op.a.dest;
+														return 'LessThan ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(left) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(right) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
+													case 'Equals':
+														var left = op.a.left;
+														var right = op.a.right;
+														var dest = op.a.dest;
+														return 'Equals ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(left) + (' ' + ($author$project$Year2019$Intcode$Disasm$Main$paramToString(right) + (' ' + $author$project$Year2019$Intcode$Disasm$Main$paramToString(dest)))));
+													default:
+														return 'Halt';
+												}
+											}
+										}()));
+									},
+									data)))
+						]))
+				]));
+	});
+var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $author$project$Year2019$Intcode$Disasm$Main$viewHeader = A2(
+	$elm$html$Html$h1,
+	_List_Nil,
+	_List_fromArray(
+		[
+			$elm$html$Html$text('Intcode Disassembler')
+		]));
 var $author$project$Year2019$Intcode$Disasm$Main$viewMem = function (mem) {
 	return A2(
-		$elm$html$Html$pre,
+		$elm$html$Html$div,
+		$author$project$Year2019$Intcode$Disasm$Main$colStyle,
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$h2,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Memory')
+					])),
+				A2(
+				$elm$html$Html$pre,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						A2(
+							$elm$core$String$join,
+							'\n',
+							A2(
+								$elm$core$List$indexedMap,
+								F2(
+									function (i, n) {
+										return '[' + ($elm$core$String$fromInt(i) + (']: ' + $elm$core$String$fromInt(n)));
+									}),
+								$elm$core$Array$toList(mem))))
+					]))
+			]));
+};
+var $author$project$Year2019$Intcode$Disasm$Main$SetOffset = function (a) {
+	return {$: 'SetOffset', a: a};
+};
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty('max');
+var $elm$html$Html$Attributes$min = $elm$html$Html$Attributes$stringProperty('min');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $elm_community$html_extra$Html$Events$Extra$targetValueInt = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'valueAsNumber']),
+	$elm$json$Json$Decode$int);
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$Year2019$Intcode$Disasm$Main$viewOffsetSlider = function (offset) {
+	var stringOffset = $elm$core$String$fromInt(offset);
+	return A2(
+		$elm$html$Html$div,
 		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$html$Html$text(
 				A2(
-					$elm$core$String$join,
-					'\n',
-					A2(
-						$elm$core$List$indexedMap,
-						F2(
-							function (i, n) {
-								return '[' + ($elm$core$String$fromInt(i) + (']: ' + $elm$core$String$fromInt(n)));
-							}),
-						$elm$core$Array$toList(mem))))
+				$elm$html$Html$input,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$type_('range'),
+						$elm$html$Html$Attributes$min('0'),
+						$elm$html$Html$Attributes$max('3'),
+						$elm$html$Html$Attributes$value(stringOffset),
+						A2(
+						$elm$html$Html$Events$on,
+						'input',
+						A2($elm$json$Json$Decode$map, $author$project$Year2019$Intcode$Disasm$Main$SetOffset, $elm_community$html_extra$Html$Events$Extra$targetValueInt))
+					]),
+				_List_Nil),
+				$elm$html$Html$text('Current offset: ' + stringOffset)
 			]));
 };
 var $author$project$Year2019$Intcode$Disasm$Main$SetRawProgram = function (a) {
@@ -5870,18 +6238,12 @@ var $elm$html$Html$Events$alwaysStop = function (x) {
 var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
 	return {$: 'MayStopPropagation', a: a};
 };
-var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
 var $elm$html$Html$Events$stopPropagationOn = F2(
 	function (event, decoder) {
 		return A2(
 			$elm$virtual_dom$VirtualDom$on,
 			event,
 			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
-	});
-var $elm$json$Json$Decode$field = _Json_decodeField;
-var $elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
 	});
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $elm$html$Html$Events$targetValue = A2(
@@ -5898,14 +6260,6 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			$elm$json$Json$Encode$string(string));
-	});
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
 var $elm$html$Html$Attributes$rows = function (n) {
 	return A2(
@@ -5914,8 +6268,7 @@ var $elm$html$Html$Attributes$rows = function (n) {
 		$elm$core$String$fromInt(n));
 };
 var $elm$html$Html$textarea = _VirtualDom_node('textarea');
-var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Year2019$Intcode$Disasm$Main$viewString = function (string) {
+var $author$project$Year2019$Intcode$Disasm$Main$viewTextarea = function (string) {
 	return A2(
 		$elm$html$Html$textarea,
 		_List_fromArray(
@@ -5930,76 +6283,60 @@ var $author$project$Year2019$Intcode$Disasm$Main$viewString = function (string) 
 };
 var $author$project$Year2019$Intcode$Disasm$Main$view = function (model) {
 	return {
-		body: function () {
-			var _v0 = model.program;
-			switch (_v0.$) {
-				case 'Raw':
-					var string = _v0.a;
-					return _List_fromArray(
-						[
-							$author$project$Year2019$Intcode$Disasm$Main$viewString(string),
-							A2(
-							$elm$html$Html$div,
-							$author$project$Year2019$Intcode$Disasm$Main$twoColsStyle,
-							_List_fromArray(
+		body: _List_fromArray(
+			[
+				$author$project$Year2019$Intcode$Disasm$Main$viewHeader,
+				$author$project$Year2019$Intcode$Disasm$Main$viewTextarea(model.rawProgram),
+				$author$project$Year2019$Intcode$Disasm$Main$viewOffsetSlider(model.offset),
+				A2(
+				$elm$html$Html$div,
+				$author$project$Year2019$Intcode$Disasm$Main$twoColsStyle,
+				function () {
+					var _v0 = model.program;
+					switch (_v0.$) {
+						case 'UnsuccessfulParse':
+							return _List_fromArray(
 								[
 									A2(
 									$elm$html$Html$div,
-									_List_Nil,
+									$author$project$Year2019$Intcode$Disasm$Main$colStyle,
 									_List_fromArray(
 										[
 											$elm$html$Html$text('Memory unavailable')
 										])),
 									A2(
 									$elm$html$Html$div,
-									_List_Nil,
+									$author$project$Year2019$Intcode$Disasm$Main$colStyle,
 									_List_fromArray(
 										[
 											$elm$html$Html$text('Disassembly unavailable')
 										]))
-								]))
-						]);
-				case 'Parsed':
-					var _v1 = _v0.a;
-					var string = _v1.a;
-					var mem = _v1.b;
-					return _List_fromArray(
-						[
-							$author$project$Year2019$Intcode$Disasm$Main$viewString(string),
-							A2(
-							$elm$html$Html$div,
-							$author$project$Year2019$Intcode$Disasm$Main$twoColsStyle,
-							_List_fromArray(
+								]);
+						case 'Parsed':
+							var mem = _v0.a;
+							return _List_fromArray(
 								[
 									$author$project$Year2019$Intcode$Disasm$Main$viewMem(mem),
 									A2(
 									$elm$html$Html$div,
-									_List_Nil,
+									$author$project$Year2019$Intcode$Disasm$Main$colStyle,
 									_List_fromArray(
 										[
 											$elm$html$Html$text('Disassembly unavailable')
 										]))
-								]))
-						]);
-				default:
-					var _v2 = _v0.a;
-					var string = _v2.a;
-					var mem = _v2.b;
-					var disassembled = _v2.c;
-					return _List_fromArray(
-						[
-							$author$project$Year2019$Intcode$Disasm$Main$viewString(string),
-							A2(
-							$elm$html$Html$div,
-							$author$project$Year2019$Intcode$Disasm$Main$twoColsStyle,
-							_List_fromArray(
+								]);
+						default:
+							var _v1 = _v0.a;
+							var mem = _v1.a;
+							var disasm = _v1.b;
+							return _List_fromArray(
 								[
 									$author$project$Year2019$Intcode$Disasm$Main$viewMem(mem),
-									$author$project$Year2019$Intcode$Disasm$Main$viewDisassembled(disassembled)
-								]))
-						]);
-			}
-		}(),
+									A2($author$project$Year2019$Intcode$Disasm$Main$viewDisassembled, model.offset, disasm)
+								]);
+					}
+				}())
+			]),
 		title: 'Intcode Disassembler'
 	};
 };
