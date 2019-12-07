@@ -450,7 +450,7 @@ viewDecompiled maybeDecompiled =
     maybeDecompiled
         |> Maybe.map
             (\statements ->
-                Html.div []
+                Html.div colStyle
                     [ Html.h2 [] [ Html.text "Decompiled program" ]
                     , Html.p [] [ Html.text "DISCLAIMER: Intcode programs might be self-modifying. This won't be accurate for all inputs." ]
                     , Html.ul
