@@ -62,7 +62,7 @@ disassembleOne supportedOps position mem =
             Intcode.get position mem
 
         opcode =
-            rawOpcode |> modBy 100
+            rawOpcode |> remainderBy 100
     in
     disassembleOneHelp
         ( rawOpcode, opcode )

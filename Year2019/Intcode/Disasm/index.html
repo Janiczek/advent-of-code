@@ -5676,7 +5676,7 @@ var $author$project$Year2019$Intcode$get = F2(
 var $author$project$Year2019$Intcode$Disasm$disassembleOne = F3(
 	function (supportedOps, position, mem) {
 		var rawOpcode = A2($author$project$Year2019$Intcode$get, position, mem);
-		var opcode = A2($elm$core$Basics$modBy, 100, rawOpcode);
+		var opcode = rawOpcode % 100;
 		return A4(
 			$author$project$Year2019$Intcode$Disasm$disassembleOneHelp,
 			_Utils_Tuple2(rawOpcode, opcode),
