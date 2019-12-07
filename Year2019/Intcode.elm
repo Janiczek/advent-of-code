@@ -22,8 +22,13 @@ module Year2019.Intcode exposing
 
 {- Intcode programs:
 
-   2019-02
-   2019-05
+      2019-02
+      2019-05
+      2019-07
+
+   TODO: demand (Position : Maybe Int, Memory) from all the `process` functions;
+   let them have their own metadata? (Every program that has an Output
+   instruction needs also the Maybe LogEntry thing.)
 
 -}
 
