@@ -216,7 +216,7 @@ parseWith supportedOps position memory =
             get position memory
 
         opcode =
-            rawOpcode |> modBy 100
+            rawOpcode |> remainderBy 100
     in
     parseWithHelp
         ( rawOpcode, opcode )
