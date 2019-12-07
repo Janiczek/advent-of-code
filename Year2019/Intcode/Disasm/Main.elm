@@ -20,7 +20,8 @@ type IntcodeProgram
 
 type alias Model =
     { rawProgram : String
-    , program : IntcodeProgram
+    , memory : Maybe Memory
+    , disasm : Maybe (List ( Int, Data Op ))
     , offset : Int
     , ops : List ( Int, Intcode.Op Op )
     }
@@ -44,7 +45,8 @@ main =
 init : () -> ( Model, Cmd Msg )
 init () =
     ( { rawProgram = ""
-      , program = UnsuccessfulParse
+      , memory = Nothing
+      , disasm = Nothing
       , ops = supportedOps -- TODO allow the user to change this
       , offset = 0
       }
@@ -172,15 +174,10 @@ recalc model =
                 (\mem -> Disasm.disassembleWith model.ops (dropArray model.offset mem))
                 maybeMem
     in
-    case ( maybeMem, maybeDisassembled ) of
-        ( Nothing, _ ) ->
-            { model | program = UnsuccessfulParse }
-
-        ( Just mem, Nothing ) ->
-            { model | program = Parsed mem }
-
-        ( Just mem, Just disasm ) ->
-            { model | program = ParsedAndDisassembled ( mem, disasm ) }
+    { model
+        | memory = maybeMem
+        , disasm = maybeDisassembled
+    }
 
 
 twoColsStyle : List (Attribute Msg)
@@ -206,22 +203,9 @@ view model =
         , viewTextarea model.rawProgram
         , viewOffsetSlider model.offset
         , Html.div twoColsStyle
-            (case model.program of
-                UnsuccessfulParse ->
-                    [ Html.div colStyle [ Html.text "Memory unavailable" ]
-                    , Html.div colStyle [ Html.text "Disassembly unavailable" ]
-                    ]
-
-                Parsed mem ->
-                    [ viewMem mem
-                    , Html.div colStyle [ Html.text "Disassembly unavailable" ]
-                    ]
-
-                ParsedAndDisassembled ( mem, disasm ) ->
-                    [ viewMem mem
-                    , viewDisassembled model.offset disasm
-                    ]
-            )
+            [ viewMem model.memory
+            , viewDisassembled model.offset model.disasm
+            ]
         ]
     }
 
@@ -262,19 +246,24 @@ viewOffsetSlider offset =
         ]
 
 
-viewMem : Memory -> Html Msg
-viewMem mem =
-    Html.div colStyle
-        [ Html.h2 [] [ Html.text "Memory" ]
-        , Html.pre
-            []
-            [ mem
-                |> Array.toList
-                |> List.indexedMap (\i n -> "[" ++ String.fromInt i ++ "]: " ++ String.fromInt n)
-                |> String.join "\n"
-                |> Html.text
-            ]
-        ]
+viewMem : Maybe Memory -> Html Msg
+viewMem maybeMem =
+    maybeMem
+        |> Maybe.map
+            (\mem ->
+                Html.div colStyle
+                    [ Html.h2 [] [ Html.text "Memory" ]
+                    , Html.pre
+                        []
+                        [ mem
+                            |> Array.toList
+                            |> List.indexedMap (\i n -> "[" ++ String.fromInt i ++ "]: " ++ String.fromInt n)
+                            |> String.join "\n"
+                            |> Html.text
+                        ]
+                    ]
+            )
+        |> Maybe.withDefault (Html.div colStyle [ Html.text "Memory unavailable" ])
 
 
 paramToString : Parameter -> String
@@ -290,53 +279,58 @@ paramToString param =
         ++ ")"
 
 
-viewDisassembled : Int -> List ( Int, Data Op ) -> Html Msg
-viewDisassembled offset data =
-    Html.div colStyle
-        [ Html.h2 [] [ Html.text "Disassembled program" ]
-        , Html.pre
-            []
-            [ data
-                |> List.map
-                    (\( position, datum ) ->
-                        "["
-                            ++ String.fromInt (position + offset)
-                            ++ "]: "
-                            ++ (case datum of
-                                    Data n ->
-                                        "raw data " ++ String.fromInt n
+viewDisassembled : Int -> Maybe (List ( Int, Data Op )) -> Html Msg
+viewDisassembled offset maybeData =
+    maybeData
+        |> Maybe.map
+            (\data ->
+                Html.div colStyle
+                    [ Html.h2 [] [ Html.text "Disassembled program" ]
+                    , Html.pre
+                        []
+                        [ data
+                            |> List.map
+                                (\( position, datum ) ->
+                                    "["
+                                        ++ String.fromInt (position + offset)
+                                        ++ "]: "
+                                        ++ (case datum of
+                                                Data n ->
+                                                    "raw data " ++ String.fromInt n
 
-                                    Instruction op ->
-                                        case op of
-                                            Add { addr0, addr1, dest } ->
-                                                "Add " ++ paramToString addr0 ++ " " ++ paramToString addr1 ++ " " ++ paramToString dest
+                                                Instruction op ->
+                                                    case op of
+                                                        Add { addr0, addr1, dest } ->
+                                                            "Add " ++ paramToString addr0 ++ " " ++ paramToString addr1 ++ " " ++ paramToString dest
 
-                                            Mult { addr0, addr1, dest } ->
-                                                "Mult " ++ paramToString addr0 ++ " " ++ paramToString addr1 ++ " " ++ paramToString dest
+                                                        Mult { addr0, addr1, dest } ->
+                                                            "Mult " ++ paramToString addr0 ++ " " ++ paramToString addr1 ++ " " ++ paramToString dest
 
-                                            SetInputAt { dest } ->
-                                                "SetInputAt " ++ paramToString dest
+                                                        SetInputAt { dest } ->
+                                                            "SetInputAt " ++ paramToString dest
 
-                                            Print { addr } ->
-                                                "Print " ++ paramToString addr
+                                                        Print { addr } ->
+                                                            "Print " ++ paramToString addr
 
-                                            JumpIfTrue { test, jumpTo } ->
-                                                "JumpIfTrue " ++ paramToString test ++ " " ++ paramToString jumpTo
+                                                        JumpIfTrue { test, jumpTo } ->
+                                                            "JumpIfTrue " ++ paramToString test ++ " " ++ paramToString jumpTo
 
-                                            JumpIfFalse { test, jumpTo } ->
-                                                "JumpIfFalse " ++ paramToString test ++ " " ++ paramToString jumpTo
+                                                        JumpIfFalse { test, jumpTo } ->
+                                                            "JumpIfFalse " ++ paramToString test ++ " " ++ paramToString jumpTo
 
-                                            LessThan { left, right, dest } ->
-                                                "LessThan " ++ paramToString left ++ " " ++ paramToString right ++ " " ++ paramToString dest
+                                                        LessThan { left, right, dest } ->
+                                                            "LessThan " ++ paramToString left ++ " " ++ paramToString right ++ " " ++ paramToString dest
 
-                                            Equals { left, right, dest } ->
-                                                "Equals " ++ paramToString left ++ " " ++ paramToString right ++ " " ++ paramToString dest
+                                                        Equals { left, right, dest } ->
+                                                            "Equals " ++ paramToString left ++ " " ++ paramToString right ++ " " ++ paramToString dest
 
-                                            Halt ->
-                                                "Halt"
-                               )
-                    )
-                |> String.join "\n"
-                |> Html.text
-            ]
-        ]
+                                                        Halt ->
+                                                            "Halt"
+                                           )
+                                )
+                            |> String.join "\n"
+                            |> Html.text
+                        ]
+                    ]
+            )
+        |> Maybe.withDefault (Html.div colStyle [ Html.text "Disassembly unavailable" ])
