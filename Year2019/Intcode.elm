@@ -7,10 +7,11 @@ module Year2019.Intcode exposing
     , digit
     , get
     , getParam
+    , getSafe
     , init
-    , opcode1
-    , opcode2
-    , opcode3
+    , opcodeSafe1
+    , opcodeSafe2
+    , opcodeSafe3
     , parse
     , parseSafe
     , parseWith
@@ -157,6 +158,57 @@ opcode3 rawOpcode ( mask1, mask2, mask3 ) fn position mem =
     fn parameter1 parameter2 parameter3
 
 
+opcodeSafe1 : Int -> Mask -> (Parameter -> a) -> Int -> Memory -> Maybe a
+opcodeSafe1 rawOpcode mask fn position mem =
+    getSafe (position + 1) mem
+        |> Maybe.map
+            (\rawParam ->
+                let
+                    parameter =
+                        param mask (digit 2 rawOpcode) rawParam
+                in
+                fn parameter
+            )
+
+
+opcodeSafe2 : Int -> ( Mask, Mask ) -> (Parameter -> Parameter -> a) -> Int -> Memory -> Maybe a
+opcodeSafe2 rawOpcode ( mask1, mask2 ) fn position mem =
+    Maybe.map2
+        (\rawParam1 rawParam2 ->
+            let
+                parameter1 =
+                    param mask1 (digit 2 rawOpcode) rawParam1
+
+                parameter2 =
+                    param mask2 (digit 3 rawOpcode) rawParam2
+            in
+            fn parameter1 parameter2
+        )
+        (getSafe (position + 1) mem)
+        (getSafe (position + 2) mem)
+
+
+opcodeSafe3 : Int -> ( Mask, Mask, Mask ) -> (Parameter -> Parameter -> Parameter -> a) -> Int -> Memory -> Maybe a
+opcodeSafe3 rawOpcode ( mask1, mask2, mask3 ) fn position mem =
+    Maybe.map3
+        (\rawParam1 rawParam2 rawParam3 ->
+            let
+                parameter1 =
+                    param mask1 (digit 2 rawOpcode) rawParam1
+
+                parameter2 =
+                    param mask2 (digit 3 rawOpcode) rawParam2
+
+                parameter3 =
+                    param mask3 (digit 4 rawOpcode) rawParam3
+            in
+            fn parameter1 parameter2 parameter3
+        )
+        (getSafe (position + 1) mem)
+        (getSafe (position + 2) mem)
+        (getSafe (position + 3) mem)
+
+
 parseWith : List ( Int, Op a ) -> Int -> Memory -> Maybe a
 parseWith supportedOps position memory =
     let
@@ -243,6 +295,11 @@ get : Int -> Memory -> Int
 get position mem =
     Array.get position mem
         |> Advent.unsafeMaybe
+
+
+getSafe : Int -> Memory -> Maybe Int
+getSafe position mem =
+    Array.get position mem
 
 
 getParam : Parameter -> Memory -> Int

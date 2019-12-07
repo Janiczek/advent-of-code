@@ -79,21 +79,20 @@ disassembleOneHelp ( rawOpcode, opcode ) supportedOps position mem =
 
         ( wantedOpcode, op ) :: restOfSupportedOps ->
             if opcode == wantedOpcode then
-                Just <|
-                    ( case op of
-                        Op0 a ->
-                            a
+                (case op of
+                    Op0 a ->
+                        Just a
 
-                        Op1 mask fn ->
-                            Intcode.opcode1 rawOpcode mask fn position mem
+                    Op1 mask fn ->
+                        Intcode.opcodeSafe1 rawOpcode mask fn position mem
 
-                        Op2 masks fn ->
-                            Intcode.opcode2 rawOpcode masks fn position mem
+                    Op2 masks fn ->
+                        Intcode.opcodeSafe2 rawOpcode masks fn position mem
 
-                        Op3 masks fn ->
-                            Intcode.opcode3 rawOpcode masks fn position mem
-                    , op
-                    )
+                    Op3 masks fn ->
+                        Intcode.opcodeSafe3 rawOpcode masks fn position mem
+                )
+                    |> Maybe.map (\parsedOp -> ( parsedOp, op ))
 
             else
                 disassembleOneHelp ( rawOpcode, opcode ) restOfSupportedOps position mem
