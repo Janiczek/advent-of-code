@@ -400,29 +400,41 @@ tryPermutation2 mem permutation =
     runTheLoop permutation ( 0, mem )
 
 
-type alias Amp =
-    { mem : Memory
-    , position : Maybe Int
-    }
+type Amp
+    = Running
+        { mem : Memory
+        , position : Int
+        }
+    | HaltedAmp
+
+
+getRunningAmp : Amp -> Maybe { mem : Memory, position : Int }
+getRunningAmp amp =
+    case amp of
+        Running amp_ ->
+            Just amp_
+
+        HaltedAmp ->
+            Nothing
 
 
 runTheLoop : Permutation -> ( Int, Memory ) -> Int
 runTheLoop ({ a, b, c, d, e } as permutation) ( input, mem ) =
     let
         ( outputA, ampA ) =
-            runProgram2 "A" [ a, input ] 0 mem
+            runProgram2 [ a, input ] 0 mem
 
         ( outputB, ampB ) =
-            runProgram2 "B" [ b, outputA ] 0 mem
+            runProgram2 [ b, outputA ] 0 mem
 
         ( outputC, ampC ) =
-            runProgram2 "C" [ c, outputB ] 0 mem
+            runProgram2 [ c, outputB ] 0 mem
 
         ( outputD, ampD ) =
-            runProgram2 "D" [ d, outputC ] 0 mem
+            runProgram2 [ d, outputC ] 0 mem
 
         ( outputE, ampE ) =
-            runProgram2 "E" [ e, outputD ] 0 mem
+            runProgram2 [ e, outputD ] 0 mem
     in
     runTheLoopWithoutPhase
         { outputE = outputE
@@ -444,23 +456,23 @@ runTheLoopWithoutPhase :
     }
     -> Int
 runTheLoopWithoutPhase { outputE, ampA, ampB, ampC, ampD, ampE } =
-    case List.filterMap identity [ ampA.position, ampB.position, ampC.position, ampD.position, ampE.position ] of
-        [ posA, posB, posC, posD, posE ] ->
+    case List.filterMap getRunningAmp [ ampA, ampB, ampC, ampD, ampE ] of
+        [ ampA_, ampB_, ampC_, ampD_, ampE_ ] ->
             let
                 ( outputA, newAmpA ) =
-                    runProgram2 "A" [ outputE ] posA ampA.mem
+                    runProgram2 [ outputE ] ampA_.position ampA_.mem
 
                 ( outputB, newAmpB ) =
-                    runProgram2 "B" [ outputA ] posB ampB.mem
+                    runProgram2 [ outputA ] ampB_.position ampB_.mem
 
                 ( outputC, newAmpC ) =
-                    runProgram2 "C" [ outputB ] posC ampC.mem
+                    runProgram2 [ outputB ] ampC_.position ampC_.mem
 
                 ( outputD, newAmpD ) =
-                    runProgram2 "D" [ outputC ] posD ampD.mem
+                    runProgram2 [ outputC ] ampD_.position ampD_.mem
 
                 ( newOutputE, newAmpE ) =
-                    runProgram2 "E" [ outputD ] posE ampE.mem
+                    runProgram2 [ outputD ] ampE_.position ampE_.mem
             in
             runTheLoopWithoutPhase
                 { outputE = newOutputE
@@ -475,34 +487,30 @@ runTheLoopWithoutPhase { outputE, ampA, ampB, ampC, ampD, ampE } =
             outputE
 
 
-runProgram2 : String -> List Int -> Int -> Memory -> ( Int, Amp )
-runProgram2 id inputs position mem =
-    case go2 id inputs [] position mem of
-        Halted r ->
+runProgram2 : List Int -> Int -> Memory -> ( Int, Amp )
+runProgram2 inputs position mem =
+    case go2 inputs [] position mem of
+        Halted haltedMem ->
             case inputs of
-                [ output ] ->
+                output :: _ ->
                     ( output
-                    , { mem = r.mem
-                      , position = Nothing
-                      }
+                    , HaltedAmp
                     )
 
                 somethingElse ->
-                    Debug.todo <| "halted without one output? " ++ Debug.toString somethingElse
+                    Debug.todo <| "should have halted with at least one input but got: " ++ Debug.toString somethingElse
 
         Emitted r ->
             ( r.output
-            , { mem = r.mem
-              , position = Just r.position
-              }
+            , Running
+                { mem = r.mem
+                , position = r.position
+                }
             )
 
 
 type State
-    = Halted
-        { log : Log
-        , mem : Memory
-        }
+    = Halted Memory
     | Emitted
         { output : Int
         , mem : Memory
@@ -510,8 +518,8 @@ type State
         }
 
 
-go2 : String -> List Int -> Log -> Int -> Memory -> State
-go2 id inputs log position mem =
+go2 : List Int -> Log -> Int -> Memory -> State
+go2 inputs log position mem =
     case Intcode.step parseOpcode (process inputs) position mem of
         Err err ->
             let
@@ -523,10 +531,7 @@ go2 id inputs log position mem =
         Ok r ->
             case r.position of
                 Nothing ->
-                    Halted
-                        { log = log
-                        , mem = r.memory
-                        }
+                    Halted r.memory
 
                 Just newPosition ->
                     case r.logEntry of
@@ -538,7 +543,7 @@ go2 id inputs log position mem =
                                 }
 
                         Nothing ->
-                            go2 id r.inputs log newPosition r.memory
+                            go2 r.inputs log newPosition r.memory
 
 
 
