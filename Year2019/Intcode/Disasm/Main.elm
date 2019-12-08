@@ -226,7 +226,7 @@ decompile data =
                     m (Intcode.unwrapParam dest) ++ " = get_input()"
 
                 Print { addr } ->
-                    "print(" ++ m (Intcode.unwrapParam addr) ++ ")"
+                    "print(" ++ param addr ++ ")"
 
                 JumpIfTrue { test, jumpTo } ->
                     case test of

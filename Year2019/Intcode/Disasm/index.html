@@ -5332,8 +5332,7 @@ var $author$project$Year2019$Intcode$Disasm$Main$decompile = function (data) {
 					$author$project$Year2019$Intcode$unwrapParam(dest)) + ' = get_input()';
 			case 'Print':
 				var addr = op.a.addr;
-				return 'print(' + ($author$project$Year2019$Intcode$Disasm$Main$m(
-					$author$project$Year2019$Intcode$unwrapParam(addr)) + ')');
+				return 'print(' + ($author$project$Year2019$Intcode$Disasm$Main$param(addr) + ')');
 			case 'JumpIfTrue':
 				var test = op.a.test;
 				var jumpTo = op.a.jumpTo;
