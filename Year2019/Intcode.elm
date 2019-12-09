@@ -9,6 +9,7 @@ module Year2019.Intcode exposing
     , getParam
     , getSafe
     , init
+    , memoryFromList
     , opcodeSafe1
     , opcodeSafe2
     , opcodeSafe3
@@ -24,22 +25,30 @@ module Year2019.Intcode exposing
 {- Intcode programs:
 
       2019-02
-      2019-05
+      2019-05 (position/immediate, new opcodes)
       2019-07
+      2019-09 (relative)
 
    TODO: demand (Position : Maybe Int, Memory) from all the `process` functions;
    let them have their own metadata? (Every program that has an Output
    instruction needs also the Maybe LogEntry thing.)
 
+   TODO: common type for (Log, RelativeBase, Position, Memory)
+   ... and maybe (List Input)
+
 -}
 
 import Advent
 import Array exposing (Array)
+import Dict exposing (Dict)
 import Maybe.Extra
 
 
 type alias Memory =
-    Array Int
+    { program : Array Int
+    , programLength : Int
+    , extra : Dict Int Int
+    }
 
 
 type Error
@@ -52,6 +61,7 @@ type Error
 type Parameter
     = Immediate Int
     | Position Int
+    | Relative Int
 
 
 {-| Needs CSV:
@@ -64,7 +74,7 @@ parse string =
     string
         |> String.split ","
         |> List.map Advent.unsafeToInt
-        |> Array.fromList
+        |> memoryFromList
 
 
 parseSafe : String -> Maybe Memory
@@ -73,20 +83,29 @@ parseSafe string =
         |> String.split ","
         |> List.map String.toInt
         |> Maybe.Extra.combine
-        |> Maybe.map Array.fromList
+        |> Maybe.map memoryFromList
 
 
 param : Mask -> Int -> Int -> Parameter
 param mask mode rawParam =
     case ( mode, mask ) of
-        ( _, WantPosition ) ->
+        ( 0, WantPosition ) ->
             Position rawParam
+
+        ( 1, WantPosition ) ->
+            Position rawParam
+
+        ( 2, WantPosition ) ->
+            Relative rawParam
 
         ( 0, DontCare ) ->
             Position rawParam
 
         ( 1, DontCare ) ->
             Immediate rawParam
+
+        ( 2, DontCare ) ->
+            Relative rawParam
 
         _ ->
             Debug.todo <| "Couldn't parse param mode " ++ String.fromInt mode
@@ -276,11 +295,12 @@ init list mem =
 
 step :
     (Int -> Memory -> Maybe op)
-    -> (op -> Int -> Memory -> a)
+    -> (op -> Int -> Int -> Memory -> a)
+    -> Int
     -> Int
     -> Memory
     -> Result Error a
-step parseOpcode processOp position mem =
+step parseOpcode processOp relativeBase position mem =
     parseOpcode position mem
         |> Result.fromMaybe
             (UnknownOpcode
@@ -288,22 +308,31 @@ step parseOpcode processOp position mem =
                 , value = get position mem
                 }
             )
-        |> Result.map (\op -> processOp op position mem)
+        |> Result.map (\op -> processOp op relativeBase position mem)
 
 
 get : Int -> Memory -> Int
 get position mem =
-    Array.get position mem
-        |> Advent.unsafeMaybe
+    if position < mem.programLength then
+        Array.get position mem.program
+            |> Advent.unsafeMaybe
+
+    else
+        Dict.get position mem.extra
+            |> Maybe.withDefault 0
 
 
 getSafe : Int -> Memory -> Maybe Int
 getSafe position mem =
-    Array.get position mem
+    if position < mem.programLength then
+        Array.get position mem.program
+
+    else
+        Dict.get position mem.extra
 
 
-getParam : Parameter -> Memory -> Int
-getParam parameter mem =
+getParam : Int -> Parameter -> Memory -> Int
+getParam relativeBase parameter mem =
     case parameter of
         Immediate n ->
             n
@@ -311,20 +340,30 @@ getParam parameter mem =
         Position position ->
             get position mem
 
+        Relative position ->
+            get (relativeBase + position) mem
+
 
 set : Int -> Int -> Memory -> Memory
 set position value mem =
-    Array.set position value mem
+    if position < mem.programLength then
+        { mem | program = Array.set position value mem.program }
+
+    else
+        { mem | extra = Dict.insert position value mem.extra }
 
 
-setParam : Parameter -> Int -> Memory -> Memory
-setParam parameter value mem =
+setParam : Int -> Parameter -> Int -> Memory -> Memory
+setParam relativeBase parameter value mem =
     case parameter of
         Immediate _ ->
             Debug.todo "Can't write to an immediate position, likely error in Mask"
 
         Position position ->
             set position value mem
+
+        Relative position ->
+            set (relativeBase + position) value mem
 
 
 unwrapParam : Parameter -> Int
@@ -335,3 +374,15 @@ unwrapParam parameter =
 
         Position position ->
             position
+
+        Relative position ->
+            -- TODO is this right?
+            position
+
+
+memoryFromList : List Int -> Memory
+memoryFromList list =
+    { program = Array.fromList list
+    , programLength = List.length list
+    , extra = Dict.empty
+    }
