@@ -7,6 +7,7 @@
     "dependencies": {
         "direct": {
             "Janiczek/elm-graph": "2.0.1",
+            "avh4/elm-fifo": "1.0.4",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.2",
             "elm/html": "1.0.0",
@@ -15,6 +16,7 @@
             "elm-community/html-extra": "3.3.0",
             "elm-community/list-extra": "8.2.2",
             "elm-community/maybe-extra": "5.1.0",
+            "lovasoa/elm-rolling-list": "1.1.4",
             "lynn/elm-arithmetic": "3.0.0",
             "rtfeldman/elm-sorter-experiment": "2.1.1",
             "the-sett/lazy-list": "1.1.1",
@@ -36,7 +38,6 @@
     "test-dependencies": {
         "direct": {},
         "indirect": {
-            "avh4/elm-fifo": "1.0.4",
             "elm-community/intdict": "3.0.0"
         }
     }

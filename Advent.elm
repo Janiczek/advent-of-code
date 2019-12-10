@@ -87,7 +87,7 @@ runTest puzzleType parse compute { description, input, expectedParsedInput, expe
                 ++ " failed on `parse`:\n  input:    "
                 ++ Debug.toString input
                 ++ "\n  expected: "
-                ++ Debug.toString (unsafeMaybe expectedParsedInput)
+                ++ Debug.toString (unsafeMaybe "test - expected parsed input" expectedParsedInput)
                 ++ "\n  actual:   "
                 ++ Debug.toString parsedInput
                 ++ "\n"
@@ -119,14 +119,14 @@ unsafeToInt string =
         |> Result.withDefault 0
 
 
-unsafeMaybe : Maybe a -> a
-unsafeMaybe maybe =
+unsafeMaybe : String -> Maybe a -> a
+unsafeMaybe location maybe =
     case maybe of
         Just x ->
             x
 
         Nothing ->
-            Debug.todo "unsafeMaybe"
+            Debug.todo location
 
 
 removeNewlinesAtEnds : String -> String
