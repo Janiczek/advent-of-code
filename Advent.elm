@@ -4,6 +4,7 @@ module Advent exposing
     , program
     , removeNewlinesAtEnds
     , unsafeMaybe
+    , unsafeResult
     , unsafeToInt
     )
 
@@ -127,6 +128,16 @@ unsafeMaybe location maybe =
 
         Nothing ->
             Debug.todo location
+
+
+unsafeResult : String -> Result err a -> a
+unsafeResult location result =
+    case result of
+        Ok x ->
+            x
+
+        Err err ->
+            Debug.todo ("[" ++ location ++ "]: " ++ Debug.toString err ++ "\n\n\n")
 
 
 removeNewlinesAtEnds : String -> String

@@ -7,13 +7,9 @@ import Advent
           -- , unsafeMaybe
         )
 import List.Extra
-import Year2019.Intcode as Intcode
-    exposing
-        ( Mask(..)
-        , Memory
-        , Op(..)
-        , Parameter
-        )
+import Year2019.Intcode as Intcode exposing (Mask(..), Op(..))
+import Year2019.Intcode.Memory as Memory exposing (Memory)
+import Year2019.Intcode.Parameter exposing (Parameter)
 
 
 
@@ -36,350 +32,43 @@ type alias Output2 =
     List Int
 
 
-type alias LogEntry =
-    Int
-
-
-type alias Log =
-    List LogEntry
-
-
 
 -- 2. PARSE (mangle the input string into the representation we decided on)
 
 
 parse1 : String -> Input1
 parse1 string =
-    Intcode.parse string
+    Memory.fromString string
+        |> Advent.unsafeMaybe "parse1"
 
 
 parse2 : String -> Input2
 parse2 string =
-    parse1 string
+    Memory.fromString string
+        |> Advent.unsafeMaybe "parse2"
 
 
 
 -- 3. COMPUTE (actually solve the problem)
 
 
-supportedOps : List ( Int, Intcode.Op Op )
-supportedOps =
-    [ ( 1
-      , Op3
-            ( DontCare, DontCare, WantPosition )
-            (\addr0 addr1 dest ->
-                Add
-                    { addr0 = addr0
-                    , addr1 = addr1
-                    , dest = dest
-                    }
-            )
-      )
-    , ( 2
-      , Op3
-            ( DontCare, DontCare, WantPosition )
-            (\addr0 addr1 dest ->
-                Mult
-                    { addr0 = addr0
-                    , addr1 = addr1
-                    , dest = dest
-                    }
-            )
-      )
-    , ( 3
-      , Op1 WantPosition
-            (\dest -> SetInputAt { dest = dest })
-      )
-    , ( 4, Op1 DontCare (\addr -> Print { addr = addr }) )
-    , ( 5
-      , Op2 ( DontCare, DontCare )
-            (\test jumpTo ->
-                JumpIfTrue
-                    { test = test
-                    , jumpTo = jumpTo
-                    }
-            )
-      )
-    , ( 6
-      , Op2 ( DontCare, DontCare )
-            (\test jumpTo ->
-                JumpIfFalse
-                    { test = test
-                    , jumpTo = jumpTo
-                    }
-            )
-      )
-    , ( 7
-      , Op3 ( DontCare, DontCare, WantPosition )
-            (\left right dest ->
-                LessThan
-                    { left = left
-                    , right = right
-                    , dest = dest
-                    }
-            )
-      )
-    , ( 8
-      , Op3 ( DontCare, DontCare, WantPosition )
-            (\left right dest ->
-                Equals
-                    { left = left
-                    , right = right
-                    , dest = dest
-                    }
-            )
-      )
-    , ( 9
-      , Op1 DontCare
-            (\value -> AddToRelativeBase { value = value })
-      )
-    , ( 99, Op0 Halt )
-    ]
-
-
-parseOpcode : Int -> Memory -> Maybe Op
-parseOpcode =
-    Intcode.parseWith supportedOps
-
-
-process :
-    List Int
-    -> Op
-    -> Int
-    -> Int
-    -> Memory
-    ->
-        { position : Maybe Int
-        , logEntry : Maybe LogEntry
-        , memory : Memory
-        , inputs : List Int
-        , relativeBase : Int
-        }
-process inputs op relativeBase position mem =
-    case op of
-        Add { addr0, addr1, dest } ->
-            let
-                num0 =
-                    Intcode.getParam relativeBase addr0 mem
-
-                num1 =
-                    Intcode.getParam relativeBase addr1 mem
-
-                newMem =
-                    Intcode.setParam relativeBase dest (num0 + num1) mem
-            in
-            { position = Just (position + 4)
-            , logEntry = Nothing
-            , memory = newMem
-            , inputs = inputs
-            , relativeBase = relativeBase
-            }
-
-        Mult { addr0, addr1, dest } ->
-            let
-                num0 =
-                    Intcode.getParam relativeBase addr0 mem
-
-                num1 =
-                    Intcode.getParam relativeBase addr1 mem
-
-                newMem =
-                    Intcode.setParam relativeBase dest (num0 * num1) mem
-            in
-            { position = Just (position + 4)
-            , logEntry = Nothing
-            , memory = newMem
-            , inputs = inputs
-            , relativeBase = relativeBase
-            }
-
-        SetInputAt { dest } ->
-            let
-                ( input, restOfInputs ) =
-                    List.Extra.uncons inputs
-                        |> Advent.unsafeMaybe
-
-                newMem =
-                    Intcode.setParam relativeBase dest input mem
-            in
-            { position = Just (position + 2)
-            , logEntry = Nothing
-            , memory = newMem
-            , inputs = restOfInputs
-            , relativeBase = relativeBase
-            }
-
-        Print { addr } ->
-            let
-                logEntry =
-                    Just <| Intcode.getParam relativeBase addr mem
-            in
-            { position = Just (position + 2)
-            , logEntry = logEntry
-            , memory = mem
-            , inputs = inputs
-            , relativeBase = relativeBase
-            }
-
-        JumpIfTrue { test, jumpTo } ->
-            let
-                testValue =
-                    Intcode.getParam relativeBase test mem
-
-                newPosition =
-                    if testValue /= 0 then
-                        Intcode.getParam relativeBase jumpTo mem
-
-                    else
-                        position + 3
-            in
-            { position = Just newPosition
-            , logEntry = Nothing
-            , memory = mem
-            , inputs = inputs
-            , relativeBase = relativeBase
-            }
-
-        JumpIfFalse { test, jumpTo } ->
-            let
-                testValue =
-                    Intcode.getParam relativeBase test mem
-
-                newPosition =
-                    if testValue == 0 then
-                        Intcode.getParam relativeBase jumpTo mem
-
-                    else
-                        position + 3
-            in
-            { position = Just newPosition
-            , logEntry = Nothing
-            , memory = mem
-            , inputs = inputs
-            , relativeBase = relativeBase
-            }
-
-        LessThan { left, right, dest } ->
-            let
-                leftValue =
-                    Intcode.getParam relativeBase left mem
-
-                rightValue =
-                    Intcode.getParam relativeBase right mem
-
-                result =
-                    if leftValue < rightValue then
-                        1
-
-                    else
-                        0
-
-                newMem =
-                    Intcode.setParam relativeBase dest result mem
-            in
-            { position = Just (position + 4)
-            , logEntry = Nothing
-            , memory = newMem
-            , inputs = inputs
-            , relativeBase = relativeBase
-            }
-
-        Equals { left, right, dest } ->
-            let
-                leftValue =
-                    Intcode.getParam relativeBase left mem
-
-                rightValue =
-                    Intcode.getParam relativeBase right mem
-
-                result =
-                    if leftValue == rightValue then
-                        1
-
-                    else
-                        0
-
-                newMem =
-                    Intcode.setParam relativeBase dest result mem
-            in
-            { position = Just (position + 4)
-            , logEntry = Nothing
-            , memory = newMem
-            , inputs = inputs
-            , relativeBase = relativeBase
-            }
-
-        AddToRelativeBase { value } ->
-            let
-                newRelativeBase =
-                    relativeBase
-                        + Intcode.getParam relativeBase value mem
-            in
-            { position = Just (position + 2)
-            , logEntry = Nothing
-            , memory = mem
-            , inputs = inputs
-            , relativeBase = newRelativeBase
-            }
-
-        Halt ->
-            { position = Nothing
-            , logEntry = Nothing
-            , memory = mem
-            , inputs = inputs
-            , relativeBase = relativeBase
-            }
-
-
-type Op
-    = Add { addr0 : Parameter, addr1 : Parameter, dest : Parameter }
-    | Mult { addr0 : Parameter, addr1 : Parameter, dest : Parameter }
-    | SetInputAt { dest : Parameter }
-    | Print { addr : Parameter }
-    | JumpIfTrue { test : Parameter, jumpTo : Parameter }
-    | JumpIfFalse { test : Parameter, jumpTo : Parameter }
-    | LessThan { left : Parameter, right : Parameter, dest : Parameter }
-    | Equals { left : Parameter, right : Parameter, dest : Parameter }
-    | AddToRelativeBase { value : Parameter }
-    | Halt
-
-
 compute1 : Input1 -> Output1
 compute1 mem =
-    -- input: 1
     -- last (hopefully only) output: BOOST keycode
-    go1 [ 1 ] [] 0 0 mem
-
-
-go1 : List Int -> Log -> Int -> Int -> Memory -> Log
-go1 inputs log relativeBase position mem =
-    case Intcode.step parseOpcode (process inputs) relativeBase position mem of
-        Err err ->
-            let
-                _ =
-                    Debug.log "Error" err
-            in
-            Debug.todo "Crashed when stepping an Intcode program"
-
-        Ok r ->
-            case r.position of
-                Nothing ->
-                    -- we've HALTed
-                    log
-
-                Just newPosition ->
-                    let
-                        newLog =
-                            r.logEntry
-                                |> Maybe.map (\logEntry -> logEntry :: log)
-                                |> Maybe.withDefault log
-                    in
-                    go1 r.inputs newLog r.relativeBase newPosition r.memory
+    Intcode.initWithMemory mem
+        |> Intcode.addInput 1
+        |> Intcode.stepUntilStopped
+        |> Intcode.unwrap
+        |> Intcode.getOutputs
 
 
 compute2 : Input1 -> Output1
 compute2 mem =
-    go1 [ 2 ] [] 0 0 mem
+    Intcode.initWithMemory mem
+        |> Intcode.addInput 2
+        |> Intcode.stepUntilStopped
+        |> Intcode.unwrap
+        |> Intcode.getOutputs
 
 
 
@@ -392,7 +81,7 @@ tests1 =
         "109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99"
         Nothing
         -- Just "parsed-input"
-        (List.reverse [ 109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99 ])
+        [ 109, 1, 204, -1, 1001, 100, 1, 100, 1008, 100, 16, 101, 1006, 101, 0, 99 ]
     , Test "ex 2"
         "104,1125899906842624,99"
         Nothing
