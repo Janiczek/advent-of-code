@@ -2,9 +2,11 @@ module Year2019.Intcode exposing
     ( Computer
     , Mask(..)
     , Op(..)
+    , OutputError(..)
     , Stop(..)
     , ToOp(..)
     , addInput
+    , getOutput
     , getOutputs
     , initWithMemory
     , step
@@ -14,10 +16,18 @@ module Year2019.Intcode exposing
 
 {- Intcode programs:
 
-   2019-02
-   2019-05 (position/immediate, new opcodes)
-   2019-07
-   2019-09 (relative base)
+      2019-02
+      2019-05 (position/immediate, new opcodes)
+      2019-07
+      2019-09 (relative base)
+
+   TODO change from Result Stop Computer to
+
+       Paused {...}
+       Halted {...}
+       WaitsForInput {...}
+       ...
+
 
 -}
 
@@ -54,6 +64,25 @@ addInput input computer =
 addOutput : Int -> Computer -> Computer
 addOutput output computer =
     { computer | outputs = Fifo.insert output computer.outputs }
+
+
+setOutputs : Fifo Int -> Computer -> Computer
+setOutputs outputs computer =
+    { computer | outputs = outputs }
+
+
+getOutput : Computer -> Result OutputError ( Int, Computer )
+getOutput computer =
+    case Fifo.remove computer.outputs of
+        ( Nothing, _ ) ->
+            Err NoOutputToGive
+
+        ( Just output, newOutputs ) ->
+            Ok
+                ( output
+                , computer
+                    |> setOutputs newOutputs
+                )
 
 
 getOutputs : Computer -> List Int
@@ -338,6 +367,10 @@ Defaults to 0 if the number doesn't have the wanted digit.
 digit : Int -> Int -> Int
 digit which n =
     (n |> modBy (10 ^ (which + 1))) // (10 ^ which)
+
+
+type OutputError
+    = NoOutputToGive
 
 
 type Stop
