@@ -26,10 +26,12 @@ program { input, parse1, parse2, compute1, compute2, tests1, tests2 } =
                 let
                     testResults1 =
                         tests1
+                            |> List.reverse
                             |> List.map (runTest "*" parse1 compute1)
 
                     testResults2 =
                         tests2
+                            |> List.reverse
                             |> List.map (runTest "**" parse2 compute2)
 
                     announce _ _ =
@@ -69,7 +71,8 @@ runTest puzzleType parse compute { description, input, expectedParsedInput, expe
             Debug.log
                 ("Running test " ++ puzzleType)
                 description
-
+    in
+    let
         parsedInput =
             parse input
 
