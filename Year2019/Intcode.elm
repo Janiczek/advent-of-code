@@ -9,6 +9,7 @@ module Year2019.Intcode exposing
     , getOutput
     , getOutputs
     , initWithMemory
+    , map
     , step
     , stepUntilStopped
     , unwrap
@@ -20,6 +21,8 @@ module Year2019.Intcode exposing
       2019-05 (position/immediate, new opcodes)
       2019-07
       2019-09 (relative base)
+      2019-11
+      2019-13
 
    TODO change from Result Stop Computer to
 
@@ -85,9 +88,32 @@ getOutput computer =
                 )
 
 
-getOutputs : Computer -> List Int
-getOutputs computer =
-    Fifo.toList computer.outputs
+getOutputs : Result Stop Computer -> ( List Int, Result Stop Computer )
+getOutputs result =
+    ( result
+        |> unwrap
+        |> .outputs
+        |> Fifo.toList
+    , map
+        (\computer -> { computer | outputs = Fifo.empty })
+        result
+    )
+
+
+map : (Computer -> Computer) -> Result Stop Computer -> Result Stop Computer
+map fn result =
+    case result of
+        Ok computer ->
+            Ok (fn computer)
+
+        Err (UnknownOpcode op computer) ->
+            Err (UnknownOpcode op (fn computer))
+
+        Err (Halted computer) ->
+            Err (Halted (fn computer))
+
+        Err (WaitsForInput computer) ->
+            Err (WaitsForInput (fn computer))
 
 
 unwrap : Result Stop Computer -> Computer
