@@ -1,0 +1,38 @@
+
+3 khk = 3042
+8 qdv = 8432
+5 dcf = 825
+4 nzv = 628
+3 psh = 537
+
+total: 13464
+
+needed ore = 13312
+
+13312 ORE => 1 FUEL, 3 KHK, 8 QDV, 5 DCF, 4 NZV, 3 PSH
+
+naively:
+1 tril. ORE => 75120192 FUEL 
+             , 225360576 KHK
+             , 300480768 NZV
+             , 375600960 DCF
+             , 600961536 QDV
+             , 4096 ORE
+
+44 XJWVT, 5 KHKGT, 1 QDVJ, 29 NZVS, 9 GPVTF, 48 HKGWZ => FUEL
+
+fuel from leftovers:
+?????????
+
+we'll probably have to do less and less fuel to allow for more and more of the leftovers to be used?
+
+ie. 75120192 + using up all the leftovers would need >1tril ORE, so create less fuel
+75120191 too
+75120190 too
+...?
+
+question is what to do with non-leftover dependencies... those will have to be created from ore itself (but they don't produce waste so that's good)
+
+
+need the leftovers to be 82892753 - 75120192
+                       = 7772561 FUEL

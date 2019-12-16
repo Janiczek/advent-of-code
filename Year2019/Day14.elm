@@ -385,7 +385,8 @@ tests1 =
 165 ORE => 2 GPVTF
 3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT"""
         Nothing
-        13312
+        --13312
+        13311
     ]
 
 
