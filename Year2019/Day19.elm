@@ -99,29 +99,8 @@ go1 state =
 
         ( x, y ) :: rest ->
             let
-                computer =
-                    Intcode.initWithMemory state.mem
-                        |> Intcode.addInput x
-                        |> Intcode.addInput y
-                        |> Intcode.stepUntilStopped
-
-                ( outputs, newComputer ) =
-                    computer
-                        |> Intcode.getOutputs
-
-                hit =
-                    case outputs of
-                        [ 1 ] ->
-                            True
-
-                        [ 0 ] ->
-                            False
-
-                        _ ->
-                            Debug.todo "wat hit"
-
                 newCount =
-                    if hit then
+                    if isHit state.mem x y then
                         state.count + 1
 
                     else
@@ -134,9 +113,80 @@ go1 state =
                 }
 
 
+leftmostXForY : Memory -> Int -> Int
+leftmostXForY mem y =
+    leftmostHelp mem y 0
+
+
+rightmostXForY : Memory -> Int -> Int
+rightmostXForY mem y =
+    rightmostHelp mem y (leftmostXForY mem y)
+
+
+leftmostHelp : Memory -> Int -> Int -> Int
+leftmostHelp mem y x =
+    if isHit mem x y then
+        x
+
+    else
+        leftmostHelp mem y (x + 1)
+
+
+rightmostHelp : Memory -> Int -> Int -> Int
+rightmostHelp mem y x =
+    if isHit mem x y then
+        rightmostHelp mem y (x + 1)
+
+    else
+        x - 1
+
+
+isHit : Memory -> Int -> Int -> Bool
+isHit mem x y =
+    let
+        computer =
+            Intcode.initWithMemory mem
+                |> Intcode.addInput x
+                |> Intcode.addInput y
+                |> Intcode.stepUntilStopped
+    in
+    case Intcode.getOutputs computer of
+        ( [ 1 ], _ ) ->
+            True
+
+        ( [ 0 ], _ ) ->
+            False
+
+        _ ->
+            Debug.todo "wat hit"
+
+
 compute2 : Input2 -> Output2
-compute2 input =
-    -1
+compute2 mem =
+    -- it was 825
+    go2 mem 815
+
+
+go2 : Memory -> Int -> Int
+go2 mem y =
+    let
+        _ =
+            Debug.log "-----------------" y
+    in
+    let
+        leftBottomCorner =
+            leftmostXForY mem (y + 99)
+                |> Debug.log "left bottom"
+
+        leftUpperCorner =
+            (rightmostXForY mem y - 99)
+                |> Debug.log "left upper"
+    in
+    if leftUpperCorner == leftBottomCorner then
+        leftUpperCorner * 10000 + y
+
+    else
+        go2 mem (y + 1)
 
 
 
