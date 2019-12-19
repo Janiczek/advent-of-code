@@ -25,6 +25,7 @@ module Year2019.Intcode exposing
       2019-13
       2019-15
       2019-17
+      2019-19
 
    TODO change from Result Stop Computer to
 
