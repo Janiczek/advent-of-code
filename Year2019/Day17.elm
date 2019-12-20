@@ -63,7 +63,7 @@ parse2 string =
 type alias State =
     { cells : Dict Coord Char
     , computer : Result Stop Computer
-    , roughPath : List ( Direction2, Int )
+    , roughPath : List ( Turn, Int )
     }
 
 
@@ -74,9 +74,9 @@ type Direction
     | Left
 
 
-type Direction2
-    = D2_Right
-    | D2_Left
+type Turn
+    = TurnRight
+    | TurnLeft
 
 
 initState1 : Memory -> State
@@ -105,12 +105,39 @@ type alias Coord =
 
 compute1 : Input1 -> Output1
 compute1 mem =
-    initState1 mem
-        |> run
-        |> outputsToCells
+    let
+        state =
+            initState1 mem
+                |> run
+                |> outputsToCells
+
+        _ =
+            print "look" state.cells
+    in
+    state
         |> findIntersections
         |> List.map alignmentParameter
         |> List.sum
+
+
+print : String -> Dict Coord Char -> ()
+print log cells =
+    let
+        _ =
+            cells
+                |> Dict.toList
+                |> Dict.Extra.groupBy (Tuple.first >> Tuple.second)
+                |> Dict.toList
+                |> List.sortBy (Tuple.first >> negate)
+                |> List.map (Tuple.mapSecond (List.sortBy (Tuple.first >> Tuple.first)))
+                |> List.map
+                    (Tuple.second
+                        >> List.map Tuple.second
+                        >> String.fromList
+                        >> Debug.log log
+                    )
+    in
+    ()
 
 
 alignmentParameter : Coord -> Int
@@ -125,6 +152,55 @@ neighbours ( x, y ) =
     , ( x, y - 1 )
     , ( x, y + 1 )
     ]
+
+
+move : Int -> Direction -> Coord -> Coord
+move n direction ( x, y ) =
+    case direction of
+        -- TODO are up and down switched?
+        Up ->
+            ( x, y - n )
+
+        Down ->
+            ( x, y + n )
+
+        Left ->
+            ( x - n, y )
+
+        Right ->
+            ( x + n, y )
+
+
+turnRight : Direction -> Direction
+turnRight direction =
+    case direction of
+        Up ->
+            Right
+
+        Right ->
+            Down
+
+        Down ->
+            Left
+
+        Left ->
+            Up
+
+
+turnLeft : Direction -> Direction
+turnLeft direction =
+    case direction of
+        Up ->
+            Left
+
+        Left ->
+            Down
+
+        Down ->
+            Right
+
+        Right ->
+            Up
 
 
 findIntersections : State -> List Coord
@@ -195,50 +271,85 @@ findRoughPath state =
                 |> Dict.Extra.find (\_ cell -> cell == '^')
                 |> Advent.unsafeMaybe "current position"
                 |> Tuple.first
-                |> Debug.log "current position"
 
         comingFrom : Coord
         comingFrom =
             currentPosition
                 |> Tuple.mapSecond (\y -> y - 1)
 
-        roughPath : List ( Direction2, Int )
+        roughPath : List ( Turn, Int )
         roughPath =
             findRoughPathHelp [] comingFrom currentPosition Up state.cells
+
+        _ =
+            roughPath
+                |> roughPathToAscii
+                |> Debug.log "rough path"
     in
     { state | roughPath = roughPath }
 
 
-findRoughPathHelp : List ( Direction2, Int ) -> Coord -> Coord -> Direction -> Dict Coord Char -> List ( Direction2, Int )
+roughPathToAscii : List ( Turn, Int ) -> String
+roughPathToAscii turns =
+    turns
+        |> List.map
+            (\( turn_, amount ) ->
+                (case turn_ of
+                    TurnLeft ->
+                        "L"
+
+                    TurnRight ->
+                        "R"
+                )
+                    ++ ","
+                    ++ String.fromInt amount
+            )
+        |> String.join ","
+
+
+findRoughPathHelp : List ( Turn, Int ) -> Coord -> Coord -> Direction -> Dict Coord Char -> List ( Turn, Int )
 findRoughPathHelp soFar comingFrom current currentDirection cells =
     if not <| Dict.Extra.any (\_ cell -> cell == '#') cells then
         List.reverse soFar
 
     else
         let
-            newDirection =
-                Debug.todo "new direction"
+            clockwiseDirection =
+                turnRight currentDirection
 
-            newDirection2 =
-                relativeDirection currentDirection newDirection
+            rightCoord =
+                move 1 clockwiseDirection current
+
+            pathExistsToRight =
+                Dict.get rightCoord cells == Just '#'
+
+            newDirection =
+                if pathExistsToRight then
+                    clockwiseDirection
+
+                else
+                    turnLeft currentDirection
+
+            newTurn =
+                turn currentDirection newDirection
 
             amount =
-                Debug.todo "amount"
+                findAmount current newDirection cells 0
 
             newComingFrom =
-                Debug.todo "new coming from"
+                current
 
             newCurrent =
-                Debug.todo "new current"
+                move amount newDirection current
 
             newSoFar =
-                ( newDirection2, amount ) :: soFar
+                ( newTurn, amount ) :: soFar
 
             newCells =
                 cells
                     |> Dict.map
                         (\coord cell ->
-                            if cell == '#' && Debug.todo "is contained in the path we just found" then
+                            if cell == '#' && isInPath coord current newDirection amount then
                                 'O'
 
                             else
@@ -248,38 +359,67 @@ findRoughPathHelp soFar comingFrom current currentDirection cells =
         findRoughPathHelp newSoFar newComingFrom newCurrent newDirection newCells
 
 
-relativeDirection : Direction -> Direction -> Direction2
-relativeDirection current next =
+findAmount : Coord -> Direction -> Dict Coord Char -> Int -> Int
+findAmount current direction cells soFar =
+    let
+        cell =
+            Dict.get current cells
+    in
+    if cell /= Just '.' && cell /= Nothing then
+        findAmount (move 1 direction current) direction cells (soFar + 1)
+
+    else
+        soFar - 1
+
+
+isInPath : Coord -> Coord -> Direction -> Int -> Bool
+isInPath ( x, y ) ( fromX, fromY ) direction amount =
+    case direction of
+        Up ->
+            fromX == x && y <= fromY && y >= (fromY - amount)
+
+        Down ->
+            fromX == x && y >= fromY && y <= (fromY + amount)
+
+        Left ->
+            fromY == y && x <= fromX && x >= (fromX - amount)
+
+        Right ->
+            fromY == y && x >= fromX && x <= (fromX + amount)
+
+
+turn : Direction -> Direction -> Turn
+turn current next =
     case ( current, next ) of
         ( Up, Left ) ->
-            D2_Left
+            TurnLeft
 
         ( Up, Right ) ->
-            D2_Right
+            TurnRight
 
         ( Right, Up ) ->
-            D2_Left
+            TurnLeft
 
         ( Right, Down ) ->
-            D2_Right
+            TurnRight
 
         ( Down, Right ) ->
-            D2_Left
+            TurnLeft
 
         ( Down, Left ) ->
-            D2_Right
+            TurnRight
 
         ( Left, Down ) ->
-            D2_Left
+            TurnLeft
 
         ( Left, Up ) ->
-            D2_Right
+            TurnRight
 
         _ ->
-            Debug.todo "relative direction didn't make a 90° turn"
+            Debug.todo "90° turn can't be made"
 
 
-goStraight : Coord -> Coord -> Direction -> Dict Coord Char -> ( Direction2, Int )
+goStraight : Coord -> Coord -> Direction -> Dict Coord Char -> ( Turn, Int )
 goStraight comingFrom current currentDirection cells =
     let
         direction =
@@ -293,11 +433,48 @@ goStraight comingFrom current currentDirection cells =
 
 compute2 : Input2 -> Output2
 compute2 mem =
-    initState2 mem
-        |> run
-        |> outputsToCells
-        |> findRoughPath
-        |> always -1
+    let
+        _ =
+            initState2 mem
+                |> run
+                |> outputsToCells
+                |> findRoughPath
+    in
+    mem
+        |> runProgram
+            """A,B,A,C,B,C,B,A,C,B
+L,6,R,8,R,12,L,6,L,8
+L,10,L,8,R,12
+L,8,L,10,L,6,L,6
+"""
+        |> List.reverse
+        |> List.head
+        |> Advent.unsafeMaybe "compute2"
+
+
+runProgram : String -> Memory -> List Int
+runProgram program mem =
+    mem
+        |> Memory.setMany [ ( 0, 2 ) ]
+        |> Intcode.initWithMemory
+        |> addStringInput program
+        |> addStringInput "n\n"
+        |> Intcode.stepUntilStopped
+        |> Intcode.getOutputs
+        |> Tuple.first
+
+
+addStringInput : String -> Computer -> Computer
+addStringInput string computer =
+    string
+        |> String.toList
+        |> List.foldl
+            (\char c ->
+                Intcode.addInput
+                    (Char.toCode char)
+                    c
+            )
+            computer
 
 
 
