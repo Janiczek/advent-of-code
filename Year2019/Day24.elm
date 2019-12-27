@@ -18,7 +18,7 @@ type alias Input1 =
 
 
 type alias Input2 =
-    Set ( Int, Int )
+    Set ( Int, Int, Int )
 
 
 type alias Output1 =
@@ -57,15 +57,32 @@ parse1 string =
 
 parse2 : String -> Input2
 parse2 string =
-    parse1 string
+    string
+        |> String.lines
+        |> List.indexedMap
+            (\y line ->
+                line
+                    |> String.toList
+                    |> List.indexedMap
+                        (\x char ->
+                            if char == '.' then
+                                Nothing
+
+                            else
+                                Just ( x, y, 0 )
+                        )
+            )
+        |> List.concat
+        |> List.filterMap identity
+        |> Set.fromList
 
 
 
 -- 3. COMPUTE (actually solve the problem)
 
 
-tick : Set ( Int, Int ) -> Set ( Int, Int )
-tick alive =
+tick1 : Set ( Int, Int ) -> Set ( Int, Int )
+tick1 alive =
     List.range 0 4
         |> List.concatMap
             (\x ->
@@ -74,7 +91,7 @@ tick alive =
             )
         |> List.filterMap
             (\coord ->
-                case aliveCount coord alive of
+                case aliveNeighbours1 coord alive of
                     1 ->
                         Just coord
 
@@ -91,15 +108,15 @@ tick alive =
         |> Set.fromList
 
 
-aliveCount : ( Int, Int ) -> Set ( Int, Int ) -> Int
-aliveCount ( x, y ) alive =
-    neighbours ( x, y )
+aliveNeighbours1 : ( Int, Int ) -> Set ( Int, Int ) -> Int
+aliveNeighbours1 coord alive =
+    neighbours1 coord
         |> Set.intersect alive
         |> Set.size
 
 
-neighbours : ( Int, Int ) -> Set ( Int, Int )
-neighbours ( x, y ) =
+neighbours1 : ( Int, Int ) -> Set ( Int, Int )
+neighbours1 ( x, y ) =
     [ if x == 0 then
         Nothing
 
@@ -149,12 +166,140 @@ go1 ( scores, alive ) =
         score
 
     else
-        go1 ( Set.insert score scores, tick alive )
+        go1 ( Set.insert score scores, tick1 alive )
 
 
 compute2 : Input2 -> Output2
 compute2 input =
-    -1
+    go2 200 input
+
+
+go2 : Int -> Set ( Int, Int, Int ) -> Int
+go2 minutesLeft alive =
+    if Debug.log "go2" minutesLeft <= 0 then
+        Set.size alive
+
+    else
+        go2 (minutesLeft - 1) (tick2 alive)
+
+
+tick2 : Set ( Int, Int, Int ) -> Set ( Int, Int, Int )
+tick2 alive =
+    let
+        depths =
+            alive
+                |> Set.toList
+                |> List.map (\( _, _, depth ) -> depth)
+
+        minDepth =
+            List.minimum depths
+                |> Advent.unsafeMaybe "tick2 minDepth"
+
+        maxDepth =
+            List.maximum depths
+                |> Advent.unsafeMaybe "tick2 maxDepth"
+    in
+    List.range (minDepth - 1) (maxDepth + 1)
+        |> List.concatMap
+            (\depth ->
+                List.range 0 4
+                    |> List.concatMap
+                        (\x ->
+                            List.range 0 4
+                                |> List.map (\y -> ( x, y, depth ))
+                        )
+            )
+        |> List.filterMap
+            (\coord ->
+                case aliveNeighbours2 coord alive of
+                    1 ->
+                        Just coord
+
+                    2 ->
+                        if Set.member coord alive then
+                            Nothing
+
+                        else
+                            Just coord
+
+                    _ ->
+                        Nothing
+            )
+        |> Set.fromList
+
+
+aliveNeighbours2 : ( Int, Int, Int ) -> Set ( Int, Int, Int ) -> Int
+aliveNeighbours2 coord alive =
+    neighbours2 coord
+        |> Set.intersect alive
+        |> Set.size
+
+
+neighbours2 : ( Int, Int, Int ) -> Set ( Int, Int, Int )
+neighbours2 ( x, y, depth ) =
+    if x == 2 && y == 2 then
+        Set.empty
+
+    else
+        [ -- left
+          if x == 0 then
+            [ ( 1, 2, depth - 1 ) ]
+
+          else if x == 3 && y == 2 then
+            [ ( 4, 0, depth + 1 )
+            , ( 4, 1, depth + 1 )
+            , ( 4, 2, depth + 1 )
+            , ( 4, 3, depth + 1 )
+            , ( 4, 4, depth + 1 )
+            ]
+
+          else
+            [ ( x - 1, y, depth ) ]
+        , -- right
+          if x == 4 then
+            [ ( 3, 2, depth - 1 ) ]
+
+          else if x == 1 && y == 2 then
+            [ ( 0, 0, depth + 1 )
+            , ( 0, 1, depth + 1 )
+            , ( 0, 2, depth + 1 )
+            , ( 0, 3, depth + 1 )
+            , ( 0, 4, depth + 1 )
+            ]
+
+          else
+            [ ( x + 1, y, depth ) ]
+        , -- up
+          if y == 0 then
+            [ ( 2, 1, depth - 1 ) ]
+
+          else if x == 2 && y == 3 then
+            [ ( 0, 4, depth + 1 )
+            , ( 1, 4, depth + 1 )
+            , ( 2, 4, depth + 1 )
+            , ( 3, 4, depth + 1 )
+            , ( 4, 4, depth + 1 )
+            ]
+
+          else
+            [ ( x, y - 1, depth ) ]
+        , -- down
+          if y == 4 then
+            [ ( 2, 3, depth - 1 ) ]
+
+          else if x == 2 && y == 1 then
+            [ ( 0, 0, depth + 1 )
+            , ( 1, 0, depth + 1 )
+            , ( 2, 0, depth + 1 )
+            , ( 3, 0, depth + 1 )
+            , ( 4, 0, depth + 1 )
+            ]
+
+          else
+            [ ( x, y + 1, depth ) ]
+        ]
+            |> List.concat
+            |> Set.fromList
 
 
 
