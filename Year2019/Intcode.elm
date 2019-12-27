@@ -5,13 +5,18 @@ module Year2019.Intcode exposing
     , OutputError(..)
     , Stop(..)
     , ToOp(..)
+    , addAsciiInput
+    , addAsciiInput_
     , addInput
+    , addInput_
+    , getAsciiOutput
     , getOutput
     , getOutputs
     , initWithMemory
     , map
     , step
     , stepUntilStopped
+    , stepUntilStopped_
     , unwrap
     )
 
@@ -67,6 +72,35 @@ addInput input computer =
     { computer | inputs = Fifo.insert input computer.inputs }
 
 
+addInput_ : Int -> Result Stop Computer -> Result Stop Computer
+addInput_ input result =
+    case result of
+        Ok computer ->
+            Ok <| addInput input computer
+
+        Err (WaitsForInput computer) ->
+            Ok <| addInput input computer
+
+        _ ->
+            result
+
+
+addAsciiInput : String -> Computer -> Computer
+addAsciiInput input computer =
+    input
+        |> String.toList
+        |> List.map Char.toCode
+        |> List.foldl addInput computer
+
+
+addAsciiInput_ : String -> Result Stop Computer -> Result Stop Computer
+addAsciiInput_ input result =
+    input
+        |> String.toList
+        |> List.map Char.toCode
+        |> List.foldl addInput_ result
+
+
 addOutput : Int -> Computer -> Computer
 addOutput output computer =
     { computer | outputs = Fifo.insert output computer.outputs }
@@ -89,6 +123,16 @@ getOutput computer =
                 , computer
                     |> setOutputs newOutputs
                 )
+
+
+getAsciiOutput : Result Stop Computer -> ( String, Result Stop Computer )
+getAsciiOutput result =
+    result
+        |> getOutputs
+        |> Tuple.mapFirst
+            (List.map Char.fromCode
+                >> String.fromList
+            )
 
 
 getOutputs : Result Stop Computer -> ( List Int, Result Stop Computer )
@@ -434,6 +478,11 @@ stepUntilStopped computer =
 
         Err err ->
             Err err
+
+
+stepUntilStopped_ : Result Stop Computer -> Result Stop Computer
+stepUntilStopped_ result =
+    Result.andThen stepUntilStopped result
 
 
 unwrapParam : Parameter -> Int
