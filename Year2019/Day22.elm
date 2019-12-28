@@ -98,7 +98,7 @@ dealWithIncrement increment deck =
     { deck
         | items =
             deck.items
-                |> List.indexedMap (\i n -> ( modBy 10 (i * increment), n ))
+                |> List.indexedMap (\i n -> ( modBy deck.length (i * increment), n ))
                 |> List.sortBy Tuple.first
                 |> List.map Tuple.second
     }
