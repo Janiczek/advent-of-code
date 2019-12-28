@@ -4,6 +4,7 @@ module Year2019.Intcode.Memory exposing
     , fromString
     , get
     , getParam
+    , length
     , set
     , setMany
     , setParam
@@ -97,3 +98,20 @@ setMany list mem =
         (\( position, value ) mem_ -> set position value mem_)
         mem
         list
+
+
+length : Memory -> Int
+length mem =
+    let
+        dictMax : Maybe Int
+        dictMax =
+            mem.extra
+                |> Dict.keys
+                |> List.maximum
+    in
+    case dictMax of
+        Nothing ->
+            mem.programLength
+
+        Just max ->
+            max

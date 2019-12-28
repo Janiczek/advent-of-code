@@ -2,29 +2,29 @@ module Year2019.Intcode.Disasm.Main exposing (main)
 
 import Array exposing (Array)
 import Browser
+import Dict
 import Html exposing (Attribute, Html)
 import Html.Attributes as Attrs
 import Html.Events as Events
 import Html.Events.Extra as Events
 import Json.Decode as Decode
 import Maybe.Extra
-import Year2019.Intcode as Intcode exposing (Mask(..), Memory, Parameter(..))
+import Year2019.Intcode as Intcode exposing (Mask(..), Op(..))
 import Year2019.Intcode.Disasm as Disasm exposing (Data(..))
+import Year2019.Intcode.Memory as Memory exposing (Memory)
+import Year2019.Intcode.Parameter as Parameter exposing (Parameter(..))
 
 
 type alias Model =
     { rawProgram : String
     , memory : Maybe Memory
-    , disasm : Maybe (List ( Int, Data Op ))
+    , disasm : Maybe (List ( Int, Data ))
     , decompiled : Maybe (List ( Int, String ))
-    , offset : Int
-    , ops : List ( Int, Intcode.Op Op )
     }
 
 
 type Msg
     = SetRawProgram String
-    | SetOffset Int
 
 
 main : Program () Model Msg
@@ -43,93 +43,9 @@ init () =
       , memory = Nothing
       , disasm = Nothing
       , decompiled = Nothing
-      , ops = supportedOps -- TODO allow the user to change this
-      , offset = 0
       }
     , Cmd.none
     )
-
-
-supportedOps : List ( Int, Intcode.Op Op )
-supportedOps =
-    [ ( 1
-      , Intcode.Op3
-            ( DontCare, DontCare, WantPosition )
-            (\addr0 addr1 dest ->
-                Add
-                    { addr0 = addr0
-                    , addr1 = addr1
-                    , dest = dest
-                    }
-            )
-      )
-    , ( 2
-      , Intcode.Op3
-            ( DontCare, DontCare, WantPosition )
-            (\addr0 addr1 dest ->
-                Mult
-                    { addr0 = addr0
-                    , addr1 = addr1
-                    , dest = dest
-                    }
-            )
-      )
-    , ( 3
-      , Intcode.Op1 WantPosition (\dest -> SetInputAt { dest = dest })
-      )
-    , ( 4, Intcode.Op1 DontCare (\addr -> Print { addr = addr }) )
-    , ( 5
-      , Intcode.Op2 ( DontCare, DontCare )
-            (\test jumpTo ->
-                JumpIfTrue
-                    { test = test
-                    , jumpTo = jumpTo
-                    }
-            )
-      )
-    , ( 6
-      , Intcode.Op2 ( DontCare, DontCare )
-            (\test jumpTo ->
-                JumpIfFalse
-                    { test = test
-                    , jumpTo = jumpTo
-                    }
-            )
-      )
-    , ( 7
-      , Intcode.Op3 ( DontCare, DontCare, WantPosition )
-            (\left right dest ->
-                LessThan
-                    { left = left
-                    , right = right
-                    , dest = dest
-                    }
-            )
-      )
-    , ( 8
-      , Intcode.Op3 ( DontCare, DontCare, WantPosition )
-            (\left right dest ->
-                Equals
-                    { left = left
-                    , right = right
-                    , dest = dest
-                    }
-            )
-      )
-    , ( 99, Intcode.Op0 Halt )
-    ]
-
-
-type Op
-    = Add { addr0 : Parameter, addr1 : Parameter, dest : Parameter }
-    | Mult { addr0 : Parameter, addr1 : Parameter, dest : Parameter }
-    | SetInputAt { dest : Parameter }
-    | Print { addr : Parameter }
-    | JumpIfTrue { test : Parameter, jumpTo : Parameter }
-    | JumpIfFalse { test : Parameter, jumpTo : Parameter }
-    | LessThan { left : Parameter, right : Parameter, dest : Parameter }
-    | Equals { left : Parameter, right : Parameter, dest : Parameter }
-    | Halt
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -144,17 +60,8 @@ update msg model =
                         |> String.replace " " ""
             }
                 |> recalc
-
-        SetOffset offset ->
-            { model | offset = offset }
-                |> recalc
     , Cmd.none
     )
-
-
-dropArray : Int -> Array a -> Array a
-dropArray n array =
-    Array.slice n (Array.length array) array
 
 
 recalc : Model -> Model
@@ -162,18 +69,15 @@ recalc model =
     let
         maybeMem : Maybe Memory
         maybeMem =
-            Intcode.parseSafe model.rawProgram
+            Memory.fromString model.rawProgram
 
-        maybeDisassembled : Maybe (List ( Int, Data Op ))
+        maybeDisassembled : Maybe (List ( Int, Data ))
         maybeDisassembled =
-            Maybe.map
-                (\mem -> Disasm.disassembleWith model.ops (dropArray model.offset mem))
-                maybeMem
+            Maybe.map Disasm.disassemble maybeMem
 
         maybeDecompiled : Maybe (List ( Int, String ))
         maybeDecompiled =
-            maybeDisassembled
-                |> Maybe.map (List.map (Tuple.mapSecond decompile))
+            Maybe.map (List.map (Tuple.mapSecond decompile)) maybeDisassembled
     in
     { model
         | memory = maybeMem
@@ -196,8 +100,11 @@ param p =
         Position pos ->
             m pos
 
+        Relative relPos ->
+            "m[rel + " ++ String.fromInt relPos ++ "]"
 
-decompile : Data Op -> String
+
+decompile : Data -> String
 decompile data =
     case data of
         Instruction op ->
@@ -222,33 +129,39 @@ decompile data =
                     else
                         m (Intcode.unwrapParam dest) ++ " = " ++ param addr0 ++ " * " ++ param addr1
 
-                SetInputAt { dest } ->
+                Input { dest } ->
                     m (Intcode.unwrapParam dest) ++ " = get_input()"
 
-                Print { addr } ->
+                Output { addr } ->
                     "print(" ++ param addr ++ ")"
 
-                JumpIfTrue { test, jumpTo } ->
+                JumpIfTrue { test, jumpPosition } ->
                     case test of
                         Immediate 0 ->
                             "do_nothing()"
 
                         Immediate _ ->
-                            "goto " ++ param jumpTo
+                            "goto " ++ param jumpPosition
 
                         Position pos ->
-                            "if " ++ m pos ++ " /= 0:\n    goto " ++ param jumpTo
+                            "if " ++ m pos ++ " /= 0:\n    goto " ++ param jumpPosition
 
-                JumpIfFalse { test, jumpTo } ->
+                        Relative relPos ->
+                            "if m[rel + " ++ String.fromInt relPos ++ "] /= 0:\n    goto " ++ param jumpPosition
+
+                JumpIfFalse { test, jumpPosition } ->
                     case test of
                         Immediate 0 ->
-                            "goto " ++ param jumpTo
+                            "goto " ++ param jumpPosition
 
                         Immediate _ ->
                             "do_nothing()"
 
                         Position pos ->
-                            "if " ++ m pos ++ " == 0:\n    goto " ++ param jumpTo
+                            "if " ++ m pos ++ " == 0:\n    goto " ++ param jumpPosition
+
+                        Relative relPos ->
+                            "if m[rel + " ++ String.fromInt relPos ++ "] == 0:\n    goto " ++ param jumpPosition
 
                 LessThan { left, right, dest } ->
                     m (Intcode.unwrapParam dest)
@@ -280,6 +193,9 @@ decompile data =
                                     "(1 if " ++ param left ++ " == " ++ param right ++ " else 0)"
                            )
 
+                AddToRelativeBase { value } ->
+                    "addToRelativeBase(" ++ param value ++ ")"
+
                 Halt ->
                     "halt()"
 
@@ -308,10 +224,9 @@ view model =
     , body =
         [ viewHeader
         , viewTextarea model.rawProgram
-        , viewOffsetSlider model.offset
         , Html.div colsStyle
             [ viewMem model.memory
-            , viewDisassembled model.offset model.disasm
+            , viewDisassembled model.disasm
             , viewDecompiled model.decompiled
             ]
         ]
@@ -335,26 +250,6 @@ viewTextarea string =
         []
 
 
-viewOffsetSlider : Int -> Html Msg
-viewOffsetSlider offset =
-    let
-        stringOffset =
-            String.fromInt offset
-    in
-    Html.div [ Attrs.style "padding" "8px 0" ]
-        [ Html.input
-            [ Attrs.type_ "range"
-            , Attrs.min "0"
-            , Attrs.max "3"
-            , Attrs.value stringOffset
-            , Attrs.style "margin-right" "8px"
-            , Events.on "input" (Decode.map SetOffset Events.targetValueInt)
-            ]
-            []
-        , Html.text <| "Current offset: " ++ stringOffset
-        ]
-
-
 viewMem : Maybe Memory -> Html Msg
 viewMem maybeMem =
     maybeMem
@@ -364,9 +259,17 @@ viewMem maybeMem =
                     [ Html.h2 [] [ Html.text "Memory" ]
                     , Html.pre
                         []
-                        [ mem
-                            |> Array.toList
-                            |> List.indexedMap (\i n -> "[" ++ String.fromInt i ++ "]: " ++ String.fromInt n)
+                        [ [ mem.program
+                                |> Array.toList
+                                |> List.indexedMap (\i n -> "[" ++ String.fromInt i ++ "]: " ++ String.fromInt n)
+                          , [ "--------------"
+                            , "Extra:"
+                            ]
+                          , mem.extra
+                                |> Dict.toList
+                                |> List.map (\( i, n ) -> "[" ++ String.fromInt i ++ "]: " ++ String.fromInt n)
+                          ]
+                            |> List.concat
                             |> String.join "\n"
                             |> Html.text
                         ]
@@ -384,12 +287,15 @@ paramToString param_ =
 
                 Immediate n ->
                     "Immediate " ++ String.fromInt n
+
+                Relative n ->
+                    "Relative " ++ String.fromInt n
            )
         ++ ")"
 
 
-viewDisassembled : Int -> Maybe (List ( Int, Data Op )) -> Html Msg
-viewDisassembled offset maybeData =
+viewDisassembled : Maybe (List ( Int, Data )) -> Html Msg
+viewDisassembled maybeData =
     maybeData
         |> Maybe.map
             (\data ->
@@ -401,7 +307,7 @@ viewDisassembled offset maybeData =
                             |> List.map
                                 (\( position, datum ) ->
                                     "["
-                                        ++ String.fromInt (position + offset)
+                                        ++ String.fromInt position
                                         ++ "]: "
                                         ++ (case datum of
                                                 Data n ->
@@ -415,23 +321,26 @@ viewDisassembled offset maybeData =
                                                         Mult { addr0, addr1, dest } ->
                                                             "Mult " ++ paramToString addr0 ++ " " ++ paramToString addr1 ++ " " ++ paramToString dest
 
-                                                        SetInputAt { dest } ->
-                                                            "SetInputAt " ++ paramToString dest
+                                                        Input { dest } ->
+                                                            "Input " ++ paramToString dest
 
-                                                        Print { addr } ->
-                                                            "Print " ++ paramToString addr
+                                                        Output { addr } ->
+                                                            "Output " ++ paramToString addr
 
-                                                        JumpIfTrue { test, jumpTo } ->
-                                                            "JumpIfTrue " ++ paramToString test ++ " " ++ paramToString jumpTo
+                                                        JumpIfTrue { test, jumpPosition } ->
+                                                            "JumpIfTrue " ++ paramToString test ++ " " ++ paramToString jumpPosition
 
-                                                        JumpIfFalse { test, jumpTo } ->
-                                                            "JumpIfFalse " ++ paramToString test ++ " " ++ paramToString jumpTo
+                                                        JumpIfFalse { test, jumpPosition } ->
+                                                            "JumpIfFalse " ++ paramToString test ++ " " ++ paramToString jumpPosition
 
                                                         LessThan { left, right, dest } ->
                                                             "LessThan " ++ paramToString left ++ " " ++ paramToString right ++ " " ++ paramToString dest
 
                                                         Equals { left, right, dest } ->
                                                             "Equals " ++ paramToString left ++ " " ++ paramToString right ++ " " ++ paramToString dest
+
+                                                        AddToRelativeBase { value } ->
+                                                            "AddToRelativeBase " ++ paramToString value
 
                                                         Halt ->
                                                             "Halt"

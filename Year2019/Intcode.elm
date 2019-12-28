@@ -14,10 +14,15 @@ module Year2019.Intcode exposing
     , getOutputs
     , initWithMemory
     , map
+    , opcode1
+    , opcode2
+    , opcode3
     , step
     , stepUntilStopped
     , stepUntilStopped_
+    , supportedOps
     , unwrap
+    , unwrapParam
     )
 
 {- Intcode programs:
@@ -204,29 +209,29 @@ setRelativeBase relativeBase computer =
     { computer | relativeBase = relativeBase }
 
 
-param : Mask -> Int -> Int -> Parameter
+param : Mask -> Int -> Int -> Maybe Parameter
 param mask mode rawParam =
     case ( mode, mask ) of
         ( 0, NoImmediate ) ->
-            Position rawParam
+            Just <| Position rawParam
 
         ( 1, NoImmediate ) ->
-            Position rawParam
+            Just <| Position rawParam
 
         ( 2, NoImmediate ) ->
-            Relative rawParam
+            Just <| Relative rawParam
 
         ( 0, DontCare ) ->
-            Position rawParam
+            Just <| Position rawParam
 
         ( 1, DontCare ) ->
-            Immediate rawParam
+            Just <| Immediate rawParam
 
         ( 2, DontCare ) ->
-            Relative rawParam
+            Just <| Relative rawParam
 
         _ ->
-            Debug.todo <| "Couldn't parse param mode " ++ String.fromInt mode
+            Nothing
 
 
 type Mask
@@ -241,7 +246,7 @@ type ToOp
     | Op3 ( Mask, Mask, Mask ) (Parameter -> Parameter -> Parameter -> Op)
 
 
-opcode1 : Int -> Mask -> (Parameter -> Op) -> Int -> Memory -> Op
+opcode1 : Int -> Mask -> (Parameter -> Op) -> Int -> Memory -> Maybe Op
 opcode1 rawOpcode mask fn position mem =
     let
         rawParam =
@@ -250,10 +255,10 @@ opcode1 rawOpcode mask fn position mem =
         parameter =
             param mask (digit 2 rawOpcode) rawParam
     in
-    fn parameter
+    Maybe.map fn parameter
 
 
-opcode2 : Int -> ( Mask, Mask ) -> (Parameter -> Parameter -> Op) -> Int -> Memory -> Op
+opcode2 : Int -> ( Mask, Mask ) -> (Parameter -> Parameter -> Op) -> Int -> Memory -> Maybe Op
 opcode2 rawOpcode ( mask1, mask2 ) fn position mem =
     let
         rawParam1 =
@@ -268,10 +273,10 @@ opcode2 rawOpcode ( mask1, mask2 ) fn position mem =
         parameter2 =
             param mask2 (digit 3 rawOpcode) rawParam2
     in
-    fn parameter1 parameter2
+    Maybe.map2 fn parameter1 parameter2
 
 
-opcode3 : Int -> ( Mask, Mask, Mask ) -> (Parameter -> Parameter -> Parameter -> Op) -> Int -> Memory -> Op
+opcode3 : Int -> ( Mask, Mask, Mask ) -> (Parameter -> Parameter -> Parameter -> Op) -> Int -> Memory -> Maybe Op
 opcode3 rawOpcode ( mask1, mask2, mask3 ) fn position mem =
     let
         rawParam1 =
@@ -292,7 +297,7 @@ opcode3 rawOpcode ( mask1, mask2, mask3 ) fn position mem =
         parameter3 =
             param mask3 (digit 4 rawOpcode) rawParam3
     in
-    fn parameter1 parameter2 parameter3
+    Maybe.map3 fn parameter1 parameter2 parameter3
 
 
 type Op
@@ -404,19 +409,18 @@ parseOpcodeHelp ( rawOpcode, opcode ) supportedOps_ position mem =
 
         ( wantedOpcode, op ) :: restOfSupportedOps ->
             if opcode == wantedOpcode then
-                Just <|
-                    case op of
-                        Op0 a ->
-                            a
+                case op of
+                    Op0 a ->
+                        Just a
 
-                        Op1 mask fn ->
-                            opcode1 rawOpcode mask fn position mem
+                    Op1 mask fn ->
+                        opcode1 rawOpcode mask fn position mem
 
-                        Op2 masks fn ->
-                            opcode2 rawOpcode masks fn position mem
+                    Op2 masks fn ->
+                        opcode2 rawOpcode masks fn position mem
 
-                        Op3 masks fn ->
-                            opcode3 rawOpcode masks fn position mem
+                    Op3 masks fn ->
+                        opcode3 rawOpcode masks fn position mem
 
             else
                 parseOpcodeHelp

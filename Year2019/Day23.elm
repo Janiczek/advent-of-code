@@ -241,26 +241,30 @@ go2 index state =
                             0
                 }
         in
-        case List.filter (\( address, _, _ ) -> address == 255) packets of
-            [] ->
-                go2 (index + 1)
-                    { stateWithWaiting
-                        | queues =
-                            state.queues
-                                |> Array.set index newQueue
-                                |> sendPackets packets
-                        , computers = Array.set index newComputer state.computers
-                    }
-
-            natPackets ->
+        case List.partition (\( address, _, _ ) -> address == 255) packets of
+            ( natPackets, normalPackets ) ->
                 go2 (index + 1)
                     { stateWithWaiting
                         | natLast =
-                            natPackets
-                                |> List.reverse
-                                |> List.head
-                                |> Advent.unsafeMaybe "last packet"
-                                |> (\( _, x, y ) -> ( x, y ))
+                            if List.isEmpty natPackets then
+                                stateWithWaiting.natLast
+
+                            else
+                                natPackets
+                                    |> List.reverse
+                                    |> List.head
+                                    |> Advent.unsafeMaybe "last packet"
+                                    |> (\( _, x, y ) -> ( x, y ))
+                        , queues =
+                            state.queues
+                                |> Array.set index newQueue
+                                |> (if List.isEmpty normalPackets then
+                                        identity
+
+                                    else
+                                        sendPackets normalPackets
+                                   )
+                        , computers = Array.set index newComputer state.computers
                     }
 
 

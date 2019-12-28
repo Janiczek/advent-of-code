@@ -1,21 +1,22 @@
-module Year2019.Intcode.Disasm exposing (Data(..), disassembleWith)
+module Year2019.Intcode.Disasm exposing (Data(..), disassemble)
 
 import Array
-import Year2019.Intcode as Intcode exposing (Memory, Op(..))
+import Year2019.Intcode as Intcode exposing (Op(..), ToOp(..))
+import Year2019.Intcode.Memory as Memory exposing (Memory)
 
 
-type Data a
-    = Instruction a
+type Data
+    = Instruction Op
     | Data Int
 
 
-disassembleWith : List ( Int, Op a ) -> Memory -> List ( Int, Data a )
-disassembleWith supportedOps mem =
-    disassembleWithHelp [] supportedOps 0 (Array.length mem) mem
+disassemble : Memory -> List ( Int, Data )
+disassemble mem =
+    disassembleHelp [] Intcode.supportedOps 0 (Memory.length mem) mem
 
 
-disassembleWithHelp : List ( Int, Data a ) -> List ( Int, Op a ) -> Int -> Int -> Memory -> List ( Int, Data a )
-disassembleWithHelp listSoFar supportedOps position length mem =
+disassembleHelp : List ( Int, Data ) -> List ( Int, ToOp ) -> Int -> Int -> Memory -> List ( Int, Data )
+disassembleHelp listSoFar supportedOps position length mem =
     if position >= length then
         List.reverse listSoFar
 
@@ -24,13 +25,13 @@ disassembleWithHelp listSoFar supportedOps position length mem =
             Nothing ->
                 let
                     newList =
-                        ( position, Data (Intcode.get position mem) )
+                        ( position, Data (Memory.get position mem) )
                             :: listSoFar
 
                     newPosition =
                         position + 1
                 in
-                disassembleWithHelp newList supportedOps newPosition length mem
+                disassembleHelp newList supportedOps newPosition length mem
 
             Just ( a, op ) ->
                 let
@@ -52,14 +53,14 @@ disassembleWithHelp listSoFar supportedOps position length mem =
                             Op3 _ _ ->
                                 position + 4
                 in
-                disassembleWithHelp newList supportedOps newPosition length mem
+                disassembleHelp newList supportedOps newPosition length mem
 
 
-disassembleOne : List ( Int, Op a ) -> Int -> Memory -> Maybe ( a, Op a )
+disassembleOne : List ( Int, ToOp ) -> Int -> Memory -> Maybe ( Op, ToOp )
 disassembleOne supportedOps position mem =
     let
         rawOpcode =
-            Intcode.get position mem
+            Memory.get position mem
 
         opcode =
             rawOpcode |> remainderBy 100
@@ -71,7 +72,7 @@ disassembleOne supportedOps position mem =
         mem
 
 
-disassembleOneHelp : ( Int, Int ) -> List ( Int, Op a ) -> Int -> Memory -> Maybe ( a, Op a )
+disassembleOneHelp : ( Int, Int ) -> List ( Int, ToOp ) -> Int -> Memory -> Maybe ( Op, ToOp )
 disassembleOneHelp ( rawOpcode, opcode ) supportedOps position mem =
     case supportedOps of
         [] ->
@@ -84,15 +85,15 @@ disassembleOneHelp ( rawOpcode, opcode ) supportedOps position mem =
                         Just a
 
                     Op1 mask fn ->
-                        Intcode.opcodeSafe1 rawOpcode mask fn position mem
+                        Intcode.opcode1 rawOpcode mask fn position mem
 
                     Op2 masks fn ->
-                        Intcode.opcodeSafe2 rawOpcode masks fn position mem
+                        Intcode.opcode2 rawOpcode masks fn position mem
 
                     Op3 masks fn ->
-                        Intcode.opcodeSafe3 rawOpcode masks fn position mem
+                        Intcode.opcode3 rawOpcode masks fn position mem
                 )
-                    |> Maybe.map (\parsedOp -> ( parsedOp, op ))
+                    |> Maybe.map (\op_ -> ( op_, op ))
 
             else
                 disassembleOneHelp ( rawOpcode, opcode ) restOfSupportedOps position mem
