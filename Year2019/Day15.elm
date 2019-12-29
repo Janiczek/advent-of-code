@@ -196,8 +196,8 @@ compute1 mem =
         |> findShortestPath
 
 
-print : State -> State
-print state =
+print1 : State -> State
+print1 state =
     let
         fromSet : Set Coord -> ( ( Int, Int ), ( Int, Int ) )
         fromSet set =
@@ -310,12 +310,100 @@ print state =
     state
 
 
-goThroughWholeSystem : State -> ( Set Coord, Coord )
-goThroughWholeSystem state =
+print2 : Set Coord -> Int -> Set Coord -> Set Coord -> Set Coord -> ()
+print2 currentFrontier elapsed todo walls done =
     let
+        fromSet : Set Coord -> ( ( Int, Int ), ( Int, Int ) )
+        fromSet set =
+            Set.foldl
+                (\( x, y ) ( ( minX_, minY_ ), ( maxX_, maxY_ ) ) ->
+                    ( ( if x < minX_ then
+                            x
+
+                        else
+                            minX_
+                      , if y < minY_ then
+                            y
+
+                        else
+                            minY_
+                      )
+                    , ( if x > maxX_ then
+                            x
+
+                        else
+                            maxX_
+                      , if y > maxY_ then
+                            y
+
+                        else
+                            maxY_
+                      )
+                    )
+                )
+                ( ( 999999, 999999 ), ( -999999, -999999 ) )
+                set
+
+        ( ( minXFrontier, minYFrontier ), ( maxXFrontier, maxYFrontier ) ) =
+            fromSet currentFrontier
+
+        ( ( minXWalls, minYWalls ), ( maxXWalls, maxYWalls ) ) =
+            fromSet walls
+
+        ( ( minXDone, minYDone ), ( maxXDone, maxYDone ) ) =
+            fromSet done
+
+        minX =
+            min (min minXFrontier minXWalls) minXDone
+
+        minY =
+            min (min minYFrontier minYWalls) minYDone
+
+        maxX =
+            max (max maxXFrontier maxXWalls) maxXDone
+
+        maxY =
+            max (max maxYFrontier maxYWalls) maxYDone
+
+        string =
+            List.range minY maxY
+                |> List.map
+                    (\y ->
+                        List.range minX maxX
+                            |> List.map
+                                (\x ->
+                                    let
+                                        coord =
+                                            ( x, y )
+                                    in
+                                    if Set.member coord currentFrontier then
+                                        '╳'
+
+                                    else if Set.member coord walls then
+                                        '█'
+
+                                    else if Set.member coord done then
+                                        '▒'
+
+                                    else
+                                        ' '
+                                )
+                            |> String.fromList
+                    )
+                |> String.join "\n"
+
         _ =
-            print state
+            Debug.log ("\n\n\n\n\n\n\n" ++ string ++ "\n\n") elapsed
     in
+    ()
+
+
+goThroughWholeSystem : State -> ( Set Coord, Set Coord, Coord )
+goThroughWholeSystem state =
+    --let
+    --    _ =
+    --        print1 state
+    --in
     case state.computer of
         Ok computer ->
             let
@@ -331,6 +419,7 @@ goThroughWholeSystem state =
             in
             if Set.isEmpty newState.frontierSet then
                 ( newState.walls
+                , newState.floor
                 , newState.oxygen |> Advent.unsafeMaybe "oxygen1"
                 )
 
@@ -357,6 +446,7 @@ goThroughWholeSystem state =
             in
             if Set.isEmpty newState.frontierSet then
                 ( newState.walls
+                , newState.floor
                 , newState.oxygen |> Advent.unsafeMaybe "oxygen"
                 )
 
@@ -522,8 +612,8 @@ addNewFrontier floor walls coord ( frontierStack, frontierSet ) =
         goodNeighbours
 
 
-findShortestPath : ( Set Coord, Coord ) -> Int
-findShortestPath ( walls, oxygenSystemCoord ) =
+findShortestPath : ( Set Coord, Set Coord, Coord ) -> Int
+findShortestPath ( walls, _, oxygenSystemCoord ) =
     AStar.findPath
         AStar.straightLineCost
         (movesFrom walls)
@@ -535,7 +625,53 @@ findShortestPath ( walls, oxygenSystemCoord ) =
 
 compute2 : Input2 -> Output2
 compute2 mem =
-    -1
+    initState mem
+        |> goThroughWholeSystem
+        |> flood
+
+
+flood : ( Set Coord, Set Coord, Coord ) -> Int
+flood ( walls, floor, oxygen ) =
+    floodHelp
+        (Set.singleton oxygen)
+        0
+        (floor |> Set.remove oxygen)
+        walls
+        Set.empty
+
+
+floodHelp : Set Coord -> Int -> Set Coord -> Set Coord -> Set Coord -> Int
+floodHelp currentFrontier elapsed todo walls done =
+    let
+        _ =
+            print2 currentFrontier elapsed todo walls done
+
+        --_ =
+        --    Debug.log "flood" ( elapsed, currentFrontier )
+    in
+    if Set.isEmpty currentFrontier then
+        elapsed
+
+    else
+        let
+            newFrontier =
+                currentFrontier
+                    |> Set.toList
+                    |> List.map (movesFrom walls >> Set.intersect todo)
+                    |> List.foldl Set.union Set.empty
+
+            newTodo =
+                Set.diff todo newFrontier
+
+            newDone =
+                Set.union currentFrontier done
+        in
+        floodHelp
+            newFrontier
+            (elapsed + 1)
+            newTodo
+            walls
+            newDone
 
 
 
