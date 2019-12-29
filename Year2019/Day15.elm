@@ -192,7 +192,7 @@ commandToInt command =
 compute1 : Input1 -> Output1
 compute1 mem =
     initState mem
-        |> findOxygenSystem
+        |> goThroughWholeSystem
         |> findShortestPath
 
 
@@ -310,20 +310,11 @@ print state =
     state
 
 
-findOxygenSystem : State -> ( Set Coord, Coord )
-findOxygenSystem state =
+goThroughWholeSystem : State -> ( Set Coord, Coord )
+goThroughWholeSystem state =
     let
         _ =
             print state
-
-        --    _ =
-        --        Debug.log "findOxygenSystem"
-        --            { pos = state.position
-        --            , walls = Set.toList state.walls
-        --            , floor = Set.toList state.floor
-        --            , frontier = state.frontierStack
-        --            , oxygen = state.oxygen
-        --            }
     in
     case state.computer of
         Ok computer ->
@@ -338,12 +329,13 @@ findOxygenSystem state =
                         )
                         state
             in
-            case newState.oxygen of
-                Nothing ->
-                    findOxygenSystem newState
+            if Set.isEmpty newState.frontierSet then
+                ( newState.walls
+                , newState.oxygen |> Advent.unsafeMaybe "oxygen1"
+                )
 
-                Just oxygenCoord ->
-                    ( newState.walls, oxygenCoord )
+            else
+                goThroughWholeSystem newState
 
         Err (Halted computer) ->
             Debug.todo "halted - wat"
@@ -363,12 +355,13 @@ findOxygenSystem state =
                         )
                         state
             in
-            case newState.oxygen of
-                Nothing ->
-                    findOxygenSystem newState
+            if Set.isEmpty newState.frontierSet then
+                ( newState.walls
+                , newState.oxygen |> Advent.unsafeMaybe "oxygen"
+                )
 
-                Just oxygenCoord ->
-                    ( newState.walls, oxygenCoord )
+            else
+                goThroughWholeSystem newState
 
 
 nextMove : List Coord -> Coord
@@ -461,27 +454,27 @@ move ( command, path, ( frontierStack, frontierSet ) ) state =
             case outputs of
                 [ 0 ] ->
                     -- hit wall
-                    ( state.position
-                    , ( Set.insert triedCoord state.walls
-                      , state.floor
+                    ( stateAfterRunning.position
+                    , ( Set.insert triedCoord stateAfterRunning.walls
+                      , stateAfterRunning.floor
                       )
-                    , Nothing
+                    , stateAfterRunning.oxygen
                     )
 
                 [ 1 ] ->
                     -- moved
                     ( triedCoord
-                    , ( state.walls
-                      , Set.insert triedCoord state.floor
+                    , ( stateAfterRunning.walls
+                      , Set.insert triedCoord stateAfterRunning.floor
                       )
-                    , Nothing
+                    , stateAfterRunning.oxygen
                     )
 
                 [ 2 ] ->
                     -- moved and found
                     ( triedCoord
-                    , ( state.walls
-                      , Set.insert triedCoord state.floor
+                    , ( stateAfterRunning.walls
+                      , Set.insert triedCoord stateAfterRunning.floor
                       )
                     , Just triedCoord
                     )
@@ -497,19 +490,16 @@ move ( command, path, ( frontierStack, frontierSet ) ) state =
                 ( stateAfterRunning.frontierStack |> List.filter ((/=) triedCoord)
                 , Set.remove triedCoord stateAfterRunning.frontierSet
                 )
-
-        stateAfterOutputs =
-            { stateAfterRunning
-                | position = newPosition
-                , walls = newWalls
-                , floor = newFloor
-                , frontierStack = newFrontierStack
-                , frontierSet = newFrontierSet
-                , oxygen = newOxygen
-                , computer = computerAfterOutputs
-            }
     in
-    stateAfterOutputs
+    { stateAfterRunning
+        | position = newPosition
+        , walls = newWalls
+        , floor = newFloor
+        , frontierStack = newFrontierStack
+        , frontierSet = newFrontierSet
+        , oxygen = newOxygen
+        , computer = computerAfterOutputs
+    }
 
 
 addNewFrontier : Set Coord -> Set Coord -> Coord -> ( List Coord, Set Coord ) -> ( List Coord, Set Coord )
