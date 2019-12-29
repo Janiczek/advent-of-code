@@ -1,5 +1,6 @@
 module Year2019.Day15 exposing (Input1, Input2, Output1, Output2, compute1, compute2, input_, main, parse1, parse2, tests1, tests2)
 
+import AStar exposing (Path)
 import Advent
     exposing
         ( Test
@@ -7,7 +8,6 @@ import Advent
           -- , unsafeMaybe
         )
 import Dict exposing (Dict)
-import Fifo
 import List.Extra
 import Set exposing (Set)
 import Year2019.Intcode as Intcode
@@ -39,6 +39,16 @@ type alias Output2 =
     Int
 
 
+pop : List a -> ( Maybe a, List a )
+pop list =
+    case list of
+        x :: xs ->
+            ( Just x, xs )
+
+        _ ->
+            ( Nothing, list )
+
+
 
 -- 2. PARSE (mangle the input string into the representation we decided on)
 
@@ -60,26 +70,84 @@ parse2 string =
 
 
 type alias State =
-    { walls : Set Coord
-    , triedCoords : Set Coord
-    , position : Coord
-    , computer : Result Stop Computer
+    { position : Coord
     , oxygen : Maybe Coord
+    , walls : Set Coord
+    , floor : Set Coord
+    , frontierPath : Path
+    , frontierStack : List Coord
+    , frontierSet : Set Coord
+    , computer : Result Stop Computer
     }
 
 
 initState : Memory -> State
 initState mem =
-    { walls = Set.empty
-    , triedCoords = Set.singleton ( 0, 0 )
-    , position = ( 0, 0 )
-    , computer = Ok <| Intcode.initWithMemory mem
+    let
+        pos =
+            ( 0, 0 )
+
+        neighbours_ =
+            neighbours ( 0, 0 )
+
+        walls =
+            Set.empty
+
+        stack =
+            neighbours_
+    in
+    { position = pos
     , oxygen = Nothing
+    , walls = walls
+    , floor = Set.singleton pos
+    , frontierPath =
+        findPath
+            stack
+            pos
+            walls
+    , frontierStack = stack
+    , frontierSet = Set.fromList neighbours_
+    , computer = Ok <| Intcode.initWithMemory mem
     }
 
 
 type alias Coord =
     ( Int, Int )
+
+
+neighbours : Coord -> List Coord
+neighbours ( x, y ) =
+    [ ( x - 1, y )
+    , ( x + 1, y )
+    , ( x, y - 1 )
+    , ( x, y + 1 )
+    ]
+
+
+movesFrom : Set Coord -> Coord -> Set Coord
+movesFrom walls coord =
+    neighbours coord
+        |> Set.fromList
+        |> (\s -> Set.diff s walls)
+
+
+coordsToCommand : Coord -> Coord -> Command
+coordsToCommand ( currentX, currentY ) ( newX, newY ) =
+    case ( compare newX currentX, compare newY currentY ) of
+        ( LT, _ ) ->
+            GoLeft
+
+        ( GT, _ ) ->
+            GoRight
+
+        ( EQ, LT ) ->
+            GoUp
+
+        ( EQ, GT ) ->
+            GoDown
+
+        ( EQ, EQ ) ->
+            Debug.todo "coordsToCommand - same coord - how is this even possible"
 
 
 move_ : Coord -> Command -> Coord
@@ -126,34 +194,149 @@ compute1 mem =
     initState mem
         |> findOxygenSystem
         |> findShortestPath
-        |> always -1
 
 
-preferredMove : State -> Command
-preferredMove { position, walls, triedCoords } =
-    if neighbour in not tried coords then
-        use it
-    else try going up or right or down or left
+print : State -> State
+print state =
+    let
+        fromSet : Set Coord -> ( ( Int, Int ), ( Int, Int ) )
+        fromSet set =
+            Set.foldl
+                (\( x, y ) ( ( minX_, minY_ ), ( maxX_, maxY_ ) ) ->
+                    ( ( if x < minX_ then
+                            x
 
+                        else
+                            minX_
+                      , if y < minY_ then
+                            y
+
+                        else
+                            minY_
+                      )
+                    , ( if x > maxX_ then
+                            x
+
+                        else
+                            maxX_
+                      , if y > maxY_ then
+                            y
+
+                        else
+                            maxY_
+                      )
+                    )
+                )
+                ( ( 999999, 999999 ), ( -999999, -999999 ) )
+                set
+
+        ( ( minXFrontier, minYFrontier ), ( maxXFrontier, maxYFrontier ) ) =
+            fromSet state.frontierSet
+
+        ( ( minXFloor, minYFloor ), ( maxXFloor, maxYFloor ) ) =
+            fromSet state.floor
+
+        ( ( minXWalls, minYWalls ), ( maxXWalls, maxYWalls ) ) =
+            fromSet state.walls
+
+        minX =
+            List.minimum
+                [ minXFrontier
+                , minXWalls
+                , minXFloor
+                ]
+                |> Advent.unsafeMaybe "minX"
+
+        maxX =
+            List.maximum
+                [ maxXFrontier
+                , maxXWalls
+                , maxXFloor
+                ]
+                |> Advent.unsafeMaybe "maxX"
+
+        minY =
+            List.minimum
+                [ minYFrontier
+                , minYWalls
+                , minYFloor
+                ]
+                |> Advent.unsafeMaybe "minY"
+
+        maxY =
+            List.maximum
+                [ maxYFrontier
+                , maxYWalls
+                , maxYFloor
+                ]
+                |> Advent.unsafeMaybe "maxY"
+
+        string =
+            List.range minY maxY
+                |> List.map
+                    (\y ->
+                        List.range minX maxX
+                            |> List.map
+                                (\x ->
+                                    let
+                                        coord =
+                                            ( x, y )
+                                    in
+                                    if state.position == coord then
+                                        '@'
+
+                                    else if state.oxygen == Just coord then
+                                        'O'
+
+                                    else if Set.member coord state.walls then
+                                        '#'
+
+                                    else if Set.member coord state.floor then
+                                        '.'
+
+                                    else if Set.member coord state.frontierSet then
+                                        '?'
+
+                                    else
+                                        ' '
+                                )
+                            |> String.fromList
+                    )
+                |> String.join "\n"
+
+        _ =
+            Debug.log ("\n\n" ++ string ++ "\n\n") ()
+    in
+    state
 
 
 findOxygenSystem : State -> ( Set Coord, Coord )
 findOxygenSystem state =
     let
         _ =
-            Debug.log "findOxygenSystem"
-                { pos = state.position
-                , walls = Set.toList state.walls
-                , tried = Set.toList state.triedCoords
-                , oxygen = state.oxygen
-                }
+            print state
+
+        --    _ =
+        --        Debug.log "findOxygenSystem"
+        --            { pos = state.position
+        --            , walls = Set.toList state.walls
+        --            , floor = Set.toList state.floor
+        --            , frontier = state.frontierStack
+        --            , oxygen = state.oxygen
+        --            }
     in
     case state.computer of
         Ok computer ->
-            -- first move = Up
             let
                 newState =
-                    move GoUp state
+                    move
+                        (nextCommand
+                            ( state.frontierStack, state.frontierSet )
+                            state.walls
+                            state.frontierPath
+                            state.position
+                        )
+                        state
             in
             case newState.oxygen of
                 Nothing ->
@@ -171,7 +354,14 @@ findOxygenSystem state =
         Err (WaitsForInput computer) ->
             let
                 newState =
-                    move (preferredMove state) state
+                    move
+                        (nextCommand
+                            ( state.frontierStack, state.frontierSet )
+                            state.walls
+                            state.frontierPath
+                            state.position
+                        )
+                        state
             in
             case newState.oxygen of
                 Nothing ->
@@ -181,12 +371,61 @@ findOxygenSystem state =
                     ( newState.walls, oxygenCoord )
 
 
-move : Command -> State -> State
-move command state =
-    let
-        _ =
-            Debug.log "trying" command
+nextMove : List Coord -> Coord
+nextMove stack =
+    stack
+        |> pop
+        |> Tuple.first
+        |> Advent.unsafeMaybe "nextMove - empty frontier"
 
+
+findPath : List Coord -> Coord -> Set Coord -> Path
+findPath stack position walls =
+    AStar.findPath
+        AStar.straightLineCost
+        (movesFrom walls)
+        position
+        (nextMove stack)
+        |> Advent.unsafeMaybe "findPath - no path"
+
+
+nextCommand : ( List Coord, Set Coord ) -> Set Coord -> Path -> Coord -> ( Command, Path, ( List Coord, Set Coord ) )
+nextCommand ( frontierStack, frontierSet ) walls path position =
+    let
+        ( coord, newPath ) =
+            pop path
+    in
+    case coord of
+        Nothing ->
+            let
+                newStack =
+                    List.filter ((/=) position) frontierStack
+
+                newSet =
+                    Set.remove position frontierSet
+
+                brandNewPath =
+                    findPath
+                        newStack
+                        position
+                        walls
+            in
+            nextCommand
+                ( newStack, newSet )
+                walls
+                brandNewPath
+                position
+
+        Just coord_ ->
+            ( coordsToCommand position coord_
+            , newPath
+            , ( frontierStack, frontierSet )
+            )
+
+
+move : ( Command, Path, ( List Coord, Set Coord ) ) -> State -> State
+move ( command, path, ( frontierStack, frontierSet ) ) state =
+    let
         triedCoord =
             move_ state.position command
 
@@ -210,56 +449,62 @@ move command state =
                     computer
                         |> Intcode.addInput input
                         |> Intcode.stepUntilStopped
+                , frontierPath = path
+                , frontierStack = frontierStack
+                , frontierSet = frontierSet
             }
 
         ( outputs, computerAfterOutputs ) =
             Intcode.getOutputs stateAfterRunning.computer
 
-        ( newPosition, ( newWalls, newTried ), newOxygen ) =
-            case Debug.log "got" outputs of
+        ( newPosition, ( newWalls, newFloor ), newOxygen ) =
+            case outputs of
                 [ 0 ] ->
                     -- hit wall
                     ( state.position
                     , ( Set.insert triedCoord state.walls
-                      , state.triedCoords
+                      , state.floor
                       )
                     , Nothing
                     )
 
                 [ 1 ] ->
                     -- moved
-                    let
-                        newPosition_ =
-                            move_ state.position command
-                    in
-                    ( newPosition_
+                    ( triedCoord
                     , ( state.walls
-                      , Set.insert newPosition_ state.triedCoords
+                      , Set.insert triedCoord state.floor
                       )
                     , Nothing
                     )
 
                 [ 2 ] ->
                     -- moved and found
-                    let
-                        newPosition_ =
-                            move_ state.position command
-                    in
-                    ( newPosition_
+                    ( triedCoord
                     , ( state.walls
-                      , Set.insert newPosition_ state.triedCoords
+                      , Set.insert triedCoord state.floor
                       )
-                    , Just newPosition_
+                    , Just triedCoord
                     )
 
                 _ ->
                     Debug.todo <| "wat outputs" ++ Debug.toString outputs
 
+        ( newFrontierStack, newFrontierSet ) =
+            addNewFrontier
+                newFloor
+                newWalls
+                newPosition
+                ( stateAfterRunning.frontierStack |> List.filter ((/=) triedCoord)
+                , Set.remove triedCoord stateAfterRunning.frontierSet
+                )
+
         stateAfterOutputs =
             { stateAfterRunning
                 | position = newPosition
                 , walls = newWalls
-                , triedCoords = newTried
+                , floor = newFloor
+                , frontierStack = newFrontierStack
+                , frontierSet = newFrontierSet
                 , oxygen = newOxygen
                 , computer = computerAfterOutputs
             }
@@ -267,9 +512,35 @@ move command state =
     stateAfterOutputs
 
 
+addNewFrontier : Set Coord -> Set Coord -> Coord -> ( List Coord, Set Coord ) -> ( List Coord, Set Coord )
+addNewFrontier floor walls coord ( frontierStack, frontierSet ) =
+    let
+        goodNeighbours =
+            neighbours coord
+                |> Set.fromList
+                |> (\s -> Set.diff s floor)
+                |> (\s -> Set.diff s walls)
+                |> (\s -> Set.diff s frontierSet)
+    in
+    Set.foldl
+        (\neighbour ( f, fs ) ->
+            ( neighbour :: f
+            , Set.insert neighbour fs
+            )
+        )
+        ( frontierStack, frontierSet )
+        goodNeighbours
+
+
 findShortestPath : ( Set Coord, Coord ) -> Int
 findShortestPath ( walls, oxygenSystemCoord ) =
-    Debug.todo "find shortest path"
+    AStar.findPath
+        AStar.straightLineCost
+        (movesFrom walls)
+        ( 0, 0 )
+        oxygenSystemCoord
+        |> Advent.unsafeMaybe "find shortest path"
+        |> List.length
 
 
 compute2 : Input2 -> Output2
