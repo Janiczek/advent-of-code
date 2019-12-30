@@ -1,28 +1,5 @@
 module Year2019.Day18 exposing (Input1, Input2, Output1, Output2, compute1, compute2, input_, main, parse1, parse2, tests1, tests2)
 
-{- TODO: this takes too long for example 4 (as the upper bound for number of
-   possible paths is n!)
-
-   We could trim the paths taken by remembering the best score and maze for a
-   given subset of collected keys... ie. if we've previously collected keys `a`
-   and `b` (no need to worry about the order), the cost is X, and we now get into
-   situation where we've collected the same set of keys (using a different path)
-   and the cost is higher, there's (probably) no need continuing in the current
-   path and we can use the previous one.
-
-   This might backfire, as it doesn't take the current position into account.
-   Maybe we should make the "primary key" (heh) not only the set of the collected
-   keys, but also the position? so [a, b, c] and pos (X,Y) is equivalent to
-   [b, a, c] and pos (X,Y), and the one with the smaller cost wins?
-
-   That seems equivalent to ([a,b,c], c) - the set of keys and the last key
-   collected...
-
-   Anyway, we'll need to switch to some kind of BFS queue system instead of this
-   naive non-information-sharing DFS.
-
--}
-
 import AStar exposing (Path)
 import Advent
     exposing
@@ -30,6 +7,7 @@ import Advent
           -- , unsafeToInt
           -- , unsafeMaybe
         )
+import AssocList
 import Char
 import Dict exposing (Dict)
 import Dict.Extra
@@ -42,11 +20,11 @@ import Set exposing (Set)
 
 
 type alias Input1 =
-    Maze
+    State
 
 
 type alias Input2 =
-    Maze
+    State
 
 
 type alias Output1 =
@@ -72,11 +50,21 @@ type Object
     | Floor
 
 
-type alias Maze =
-    { objects : Dict Coord Object
-    , keys : Dict Char Coord
+type alias Job =
+    { collectedWithoutLast : Set Char
+    , lastCollected : Char
+    , cost : Int -- of all collected
+    , objects : Dict Coord Object
     , position : Coord
-    , cost : Int
+    }
+
+
+type alias State =
+    { originalObjects : Dict Coord Object
+    , originalPosition : Coord
+    , keys : Dict Char Coord
+    , keysSet : Set Char
+    , jobs : List Job
     }
 
 
@@ -95,36 +83,122 @@ parse1 string =
             )
         |> List.concat
         |> List.foldl
-            (\( x, y, char ) maze ->
+            (\( x, y, char ) state ->
                 let
                     newPosition =
                         if char == '@' then
                             ( x, y )
 
                         else
-                            maze.position
+                            state.originalPosition
 
-                    newKeys =
+                    ( newKeys, newKeysSet ) =
                         if Char.isLower char then
-                            Dict.insert char ( x, y ) maze.keys
+                            ( Dict.insert char ( x, y ) state.keys
+                            , Set.insert char state.keysSet
+                            )
 
                         else
-                            maze.keys
+                            ( state.keys
+                            , state.keysSet
+                            )
 
                     newObjects =
-                        Dict.insert ( x, y ) (parseObject char) maze.objects
+                        Dict.insert
+                            ( x, y )
+                            (parseObject char)
+                            state.originalObjects
                 in
-                { maze
-                    | objects = newObjects
-                    , position = newPosition
+                { state
+                    | originalObjects = newObjects
+                    , originalPosition = newPosition
                     , keys = newKeys
+                    , keysSet = newKeysSet
                 }
             )
-            { objects = Dict.empty
+            { originalObjects = Dict.empty
+            , originalPosition = ( 0, 0 )
             , keys = Dict.empty
-            , position = ( -1, -1 )
-            , cost = 0
+            , keysSet = Set.empty
+            , jobs = []
             }
+        |> addStartingJobs
+
+
+reachableKeyPaths : Coord -> Dict Char Coord -> List Char -> Dict Coord Object -> List ( Char, Coord, Path )
+reachableKeyPaths coord keys neededKeys objects =
+    neededKeys
+        |> List.filterMap
+            (\key ->
+                Dict.get key keys
+                    |> Maybe.andThen
+                        (\keyCoord ->
+                            pathToKey coord keyCoord objects
+                                |> Maybe.map (\path -> ( key, keyCoord, path ))
+                        )
+            )
+
+
+addStartingJobs : State -> State
+addStartingJobs state =
+    let
+        paths : List ( Char, Coord, Path )
+        paths =
+            reachableKeyPaths
+                state.originalPosition
+                state.keys
+                (Dict.keys state.keys)
+                state.originalObjects
+
+        jobs : List Job
+        jobs =
+            paths
+                |> List.map
+                    (\( key, keyCoord, path ) ->
+                        { collectedWithoutLast = Set.empty
+                        , lastCollected = key
+                        , cost = List.length path
+                        , objects = removeDoorAndKey key state.originalObjects
+                        , position = keyCoord
+                        }
+                    )
+                |> keepOnlyBestJobs
+                |> (\j ->
+                        let
+                            _ =
+                                Debug.log "new jobs" (List.length j)
+                        in
+                        j
+                   )
+    in
+    { state | jobs = jobs }
+
+
+keepOnlyBestJobs : List Job -> List Job
+keepOnlyBestJobs jobs =
+    jobs
+        |> Dict.Extra.groupBy (\job -> ( List.sort (Set.toList job.collectedWithoutLast), job.lastCollected ))
+        |> Dict.toList
+        |> List.map
+            (\( chars, jobs_ ) ->
+                jobs_
+                    |> List.Extra.minimumBy .cost
+                    |> Advent.unsafeMaybe "keepOnlyBestJobs"
+            )
+
+
+removeDoorAndKey : Char -> Dict Coord Object -> Dict Coord Object
+removeDoorAndKey char objects =
+    -- TODO not that efficient, could use `doors : Dict Char Coord`
+    objects
+        |> Dict.map
+            (\_ object ->
+                if object == Door char || object == Key char then
+                    Floor
+
+                else
+                    object
+            )
 
 
 parseObject : Char -> Object
@@ -144,7 +218,7 @@ parseObject char =
                 Key char
 
             else if Char.isUpper char then
-                Door char
+                Door (Char.toLower char)
 
             else
                 Debug.todo "parseObject wat"
@@ -159,87 +233,79 @@ parse2 string =
 -- 3. COMPUTE (actually solve the problem)
 
 
-compute1 : Maze -> Output1
-compute1 maze =
-    let
-        pathsToKeys : List Path
-        pathsToKeys =
-            maze.keys
-                |> Dict.values
-                |> List.filterMap (pathToKey maze)
-    in
-    if List.isEmpty pathsToKeys then
-        maze.cost
-            |> Debug.log "finished with"
-
-    else
-        pathsToKeys
-            |> List.map (usePath maze >> compute1)
+compute1 : State -> Output1
+compute1 state =
+    if allKeysCollected state.jobs then
+        state.jobs
+            |> List.map .cost
             |> List.minimum
             |> Advent.unsafeMaybe "compute1"
 
-
-usePath : Maze -> Path -> Maze
-usePath maze path =
-    let
-        newPosition =
-            path
-                |> List.reverse
-                |> List.head
-                |> Advent.unsafeMaybe "newPosition"
-
-        key =
-            maze.objects
-                |> Dict.get newPosition
-                |> Advent.unsafeMaybe "key"
-                |> keyToChar
-    in
-    { maze
-        | position = newPosition
-        , cost = maze.cost + List.length path
-        , keys = Dict.remove key maze.keys
-        , objects =
-            maze.objects
-                |> Dict.insert newPosition Floor
-                |> Dict.map
-                    (\_ object ->
-                        if object == Door (Char.toUpper key) then
-                            Floor
-
-                        else
-                            object
-                    )
-    }
-
-
-keyToChar : Object -> Char
-keyToChar object =
-    case object of
-        Key c ->
-            c
-
-        _ ->
-            Debug.todo "wat keyToChar"
+    else
+        let
+            newJobs =
+                state.jobs
+                    |> List.concatMap
+                        (\job ->
+                            let
+                                paths : List ( Char, Coord, Path )
+                                paths =
+                                    reachableKeyPaths
+                                        job.position
+                                        state.keys
+                                        (Set.diff state.keysSet job.collectedWithoutLast
+                                            |> Set.remove job.lastCollected
+                                            |> Set.toList
+                                        )
+                                        job.objects
+                            in
+                            paths
+                                |> List.map
+                                    (\( key, keyCoord, path ) ->
+                                        { collectedWithoutLast = Set.insert job.lastCollected job.collectedWithoutLast
+                                        , lastCollected = key
+                                        , cost = job.cost + List.length path
+                                        , objects = removeDoorAndKey key job.objects
+                                        , position = keyCoord
+                                        }
+                                    )
+                        )
+                    |> keepOnlyBestJobs
+                    |> (\j ->
+                            let
+                                _ =
+                                    Debug.log "new jobs" (List.length j)
+                            in
+                            j
+                       )
+        in
+        compute1 { state | jobs = newJobs }
 
 
-pathToKey : Maze -> Coord -> Maybe Path
-pathToKey maze keyCoord =
-    --let
-    --    _ =
-    --        print ("finding " ++ Debug.toString keyCoord) maze
-    --in
+allKeysCollected : List Job -> Bool
+allKeysCollected jobs =
+    jobs
+        |> List.head
+        |> Advent.unsafeMaybe "allKeysCollected"
+        |> .objects
+        |> Dict.values
+        |> List.all (\obj -> obj == Wall || obj == Floor)
+
+
+pathToKey : Coord -> Coord -> Dict Coord Object -> Maybe Path
+pathToKey currentCoord keyCoord objects =
     AStar.findPath
         AStar.straightLineCost
-        (movesFrom maze.objects)
-        maze.position
+        (movesFrom objects)
+        currentCoord
         keyCoord
 
 
-print : String -> Maze -> ()
-print log maze =
+print : String -> Job -> ()
+print log job =
     let
         _ =
-            maze.objects
+            job.objects
                 |> Dict.toList
                 |> Dict.Extra.groupBy (Tuple.first >> Tuple.second)
                 |> Dict.toList
@@ -248,10 +314,10 @@ print log maze =
                 |> List.map
                     (Tuple.second
                         >> List.map
-                            (\( ( x, y ), obj ) ->
+                            (\( coord, obj ) ->
                                 case obj of
                                     Floor ->
-                                        if maze.position == ( x, y ) then
+                                        if job.position == coord then
                                             '@'
 
                                         else
