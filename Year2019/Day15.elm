@@ -289,13 +289,13 @@ print1 state =
                                         'O'
 
                                     else if Set.member coord state.walls then
-                                        '#'
+                                        '█'
 
                                     else if Set.member coord state.floor then
-                                        '.'
+                                        '▒'
 
                                     else if Set.member coord state.frontierSet then
-                                        '?'
+                                        '╳'
 
                                     else
                                         ' '
@@ -305,7 +305,7 @@ print1 state =
                 |> String.join "\n"
 
         _ =
-            Debug.log ("\n\n" ++ string ++ "\n\n") ()
+            Debug.log ("\n\n\n\n\n\n\n" ++ string ++ "\n\n") ()
     in
     state
 
@@ -400,10 +400,10 @@ print2 currentFrontier elapsed todo walls done =
 
 goThroughWholeSystem : State -> ( Set Coord, Set Coord, Coord )
 goThroughWholeSystem state =
-    --let
-    --    _ =
-    --        print1 state
-    --in
+    let
+        _ =
+            print1 state
+    in
     case state.computer of
         Ok computer ->
             let
