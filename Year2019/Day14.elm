@@ -25,7 +25,7 @@ type alias Input2 =
 
 
 type alias Output1 =
-    Int
+    { leftovers : List Item, deps : List Item }
 
 
 type alias Output2 =
@@ -206,48 +206,58 @@ parse2 string =
 
 compute1 : Input1 -> Output1
 compute1 ( graph, order ) =
-    let
-        _ =
-            Debug.log "=======================================" ()
-    in
     -- how much "ORE" needed for 1 "FUEL"
     process1 graph order [ ( 1, "FUEL" ) ]
 
 
-process1 : RecipeGraph -> ProcessingOrder -> List Item -> Int
+process1 : RecipeGraph -> ProcessingOrder -> List Item -> { leftovers : List Item, deps : List Item }
 process1 graph order dependencies =
-    let
-        allProcessed =
-            List.foldl
-                (\typeToProcess deps -> process1Type graph order typeToProcess deps)
-                dependencies
-                order
-    in
-    case allProcessed of
-        [ ( n, "ORE" ) ] ->
-            n
-
-        _ ->
-            Debug.todo "process1 wat"
+    List.foldl
+        (\typeToProcess deps -> process1Type graph order typeToProcess deps)
+        { leftovers = []
+        , deps = dependencies
+        }
+        order
+        |> (\s -> { s | leftovers = List.sortBy Tuple.second s.leftovers })
 
 
-process1Type : RecipeGraph -> ProcessingOrder -> String -> List Item -> List Item
-process1Type graph order typeToProcess dependencies =
-    dependencies
-        |> List.concatMap (process1One graph order typeToProcess)
-        |> addSame
+process1Type : RecipeGraph -> ProcessingOrder -> String -> { leftovers : List Item, deps : List Item } -> { leftovers : List Item, deps : List Item }
+process1Type graph order typeToProcess { leftovers, deps } =
+    deps
+        |> List.map (process1One graph order typeToProcess)
+        |> List.foldl
+            (\( overflow, deps_ ) ( accOverflow, accDeps ) ->
+                ( overflow + accOverflow
+                , deps_ ++ accDeps
+                )
+            )
+            ( 0, [] )
+        |> Tuple.mapBoth
+            (\overflow ->
+                if overflow == 0 then
+                    leftovers
+
+                else
+                    ( overflow, typeToProcess ) :: leftovers
+            )
+            addSame
+        |> (\( overflow, deps_ ) ->
+                { leftovers = overflow
+                , deps = deps_
+                }
+           )
 
 
-process1One : RecipeGraph -> ProcessingOrder -> String -> Item -> List Item
+process1One : RecipeGraph -> ProcessingOrder -> String -> Item -> ( Int, List Item )
 process1One graph order typeToProcess (( _, type_ ) as item) =
     if type_ == typeToProcess then
         getDeps graph order item
 
     else
-        [ item ]
+        ( 0, [ item ] )
 
 
-getDeps : RecipeGraph -> ProcessingOrder -> Item -> List Item
+getDeps : RecipeGraph -> ProcessingOrder -> Item -> ( Int, List Item )
 getDeps graph order item =
     let
         easyDeps =
@@ -257,23 +267,15 @@ getDeps graph order item =
         getTrickyDeps graph order item
 
     else
-        easyDeps
+        ( 0, easyDeps )
 
 
-getTrickyDeps : RecipeGraph -> ProcessingOrder -> Item -> List Item
+getTrickyDeps : RecipeGraph -> ProcessingOrder -> Item -> ( Int, List Item )
 getTrickyDeps graph order (( quantity, type_ ) as item) =
     if type_ == "ORE" then
-        [ ( quantity, type_ ) ]
+        ( 0, [ ( quantity, type_ ) ] )
 
     else
-        let
-            _ =
-                Debug.log "------------------------------" type_
-        in
-        let
-            _ =
-                Debug.log "want to produce" quantity
-        in
         let
             allPossibilities : List Item
             allPossibilities =
@@ -291,16 +293,12 @@ getTrickyDeps graph order (( quantity, type_ ) as item) =
 
             possibility : Item
             possibility =
-                -- TODO use all of them, not just the first one?
                 allPossibilities
                     |> List.head
                     |> Advent.unsafeMaybe "possibility head"
 
             ( possibleQuantity, _ ) =
                 possibility
-
-            _ =
-                Debug.log "can produce" possibleQuantity
         in
         let
             deps : List Item
@@ -316,16 +314,11 @@ getTrickyDeps graph order (( quantity, type_ ) as item) =
             overflow : Int
             overflow =
                 amountNeeded * possibleQuantity - quantity
-
-            _ =
-                if overflow == 0 then
-                    0
-
-                else
-                    Debug.log "will waste" overflow
         in
-        deps
+        ( overflow
+        , deps
             |> List.map (\( depQuantity, depType_ ) -> ( depQuantity * amountNeeded, depType_ ))
+        )
 
 
 addSame : List Item -> List Item
@@ -337,7 +330,7 @@ addSame dependencies =
                 sameDeps
                     |> List.map Tuple.first
                     |> List.sum
-                    |> (\quantity -> ( quantity, type_ ))
+                    |> (\amount -> ( amount, type_ ))
             )
         |> Dict.values
 
@@ -353,28 +346,7 @@ compute2 input =
 
 tests1 : List (Test Input1 Output1)
 tests1 =
-    [ --    [ Test "example 1"
-      --        """10 ORE => 10 A
-      --1 ORE => 1 B
-      --7 A, 1 B => 1 C
-      --7 A, 1 C => 1 D
-      --7 A, 1 D => 1 E
-      --7 A, 1 E => 1 FUEL"""
-      --        Nothing
-      --        -- Just "parsed-input"
-      --        31
-      --    , Test "example 2"
-      --        """9 ORE => 2 A
-      --8 ORE => 3 B
-      --7 ORE => 5 C
-      --3 A, 4 B => 1 AB
-      --5 B, 7 C => 1 BC
-      --4 C, 1 A => 1 CA
-      --2 AB, 3 BC, 4 CA => 1 FUEL"""
-      --        Nothing
-      --        165
-      --    ,
-      Test "example 3"
+    [ Test "example1 3"
         """157 ORE => 5 NZVS
 165 ORE => 6 DCFZ
 44 XJWVT, 5 KHKGT, 1 QDVJ, 29 NZVS, 9 GPVTF, 48 HKGWZ => 1 FUEL
@@ -385,14 +357,33 @@ tests1 =
 165 ORE => 2 GPVTF
 3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT"""
         Nothing
-        --13312
-        13311
+        { deps = [ ( 13312, "ORE" ) ]
+        , leftovers =
+            [ ( 5, "DCFZ" )
+            , ( 3, "KHKGT" )
+            , ( 4, "NZVS" )
+            , ( 3, "PSHF" )
+            , ( 8, "QDVJ" )
+            ]
+        }
     ]
 
 
 tests2 : List (Test Input2 Output2)
 tests2 =
-    []
+    [ Test "example2 1"
+        """157 ORE => 5 NZVS
+165 ORE => 6 DCFZ
+44 XJWVT, 5 KHKGT, 1 QDVJ, 29 NZVS, 9 GPVTF, 48 HKGWZ => 1 FUEL
+12 HKGWZ, 1 GPVTF, 8 PSHF => 9 QDVJ
+179 ORE => 7 PSHF
+177 ORE => 5 HKGWZ
+7 DCFZ, 7 PSHF => 2 XJWVT
+165 ORE => 2 GPVTF
+3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT"""
+        Nothing
+        82892753
+    ]
 
 
 
