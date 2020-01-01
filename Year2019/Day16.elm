@@ -6,8 +6,8 @@ import Advent
           -- , unsafeToInt
           -- , unsafeMaybe
         )
+import Arithmetic
 import List.Extra
-import List.Zipper as Zipper exposing (Zipper)
 
 
 
@@ -55,26 +55,20 @@ compute1 ints =
     let
         length =
             List.length ints
-
-        range =
-            List.range 0 (length - 1)
     in
     ints
-        |> Zipper.fromList
-        |> Advent.unsafeMaybe "compute1 empty list"
-        |> doNTimes 100 (phase range length)
-        |> Zipper.toList
+        |> doNTimes 100 (phase length)
         |> List.take 8
         |> List.map String.fromInt
         |> String.concat
 
 
-
---"25131128"
-
-
 doNTimes : Int -> (a -> a) -> a -> a
 doNTimes n fn value =
+    let
+        _ =
+            Debug.log "repetitions left" n
+    in
     if n == 0 then
         value
 
@@ -82,124 +76,87 @@ doNTimes n fn value =
         doNTimes (n - 1) fn (fn value)
 
 
-phase : List Int -> Int -> Zipper Int -> Zipper Int
-phase range length ints =
-    let
-        _ =
-            Debug.log "\\o/" ()
-    in
-    range
+phase : Int -> List Int -> List Int
+phase length ints =
+    List.range 0 (length - 1)
         |> List.map (computeDigit length ints)
-        |> Zipper.fromList
-        |> Advent.unsafeMaybe "empty result list in phase"
 
 
-computeDigit : Int -> Zipper Int -> Int -> Int
-computeDigit length zipper index =
-    patternFn length index zipper
+computeDigit : Int -> List Int -> Int -> Int
+computeDigit length ints index =
+    let
+        pattern =
+            computePattern length index
+    in
+    List.map2 (*) pattern ints
+        |> List.sum
         |> abs
         |> modBy 10
 
 
-patternFn : Int -> Int -> Zipper Int -> Int
-patternFn length index zipper =
-    let
-        _ =
-            Debug.log "digit" index
-    in
-    let
-        index1 =
-            index + 1
-
-        -- current and before == "saved"
-        positive =
-            zipper
-                |> Debug.log "starting"
-                |> drop index
-                |> Debug.log "dropped the first irregular 0s"
-                |> jumpAndDrop index1 (3 * index1)
-                |> Debug.log "after everything"
-                |> Zipper.toList
-                |> List.sum
-
-        negative =
-            0
-
-        {- zipper
-           |> drop (3 * index1 - 1)
-           |> jumpAndDrop index1 (3 * index1)
-           |> Zipper.toList
-           --|> Debug.log "keep -"
-           |> List.sum
-        -}
-    in
-    positive - negative
+basePattern : List Int
+basePattern =
+    [ 0, 1, 0, -1 ]
 
 
-jumpAndDrop : Int -> Int -> Zipper Int -> Zipper Int
-jumpAndDrop jumpAmount dropAmount zipper =
-    if Zipper.isLast zipper then
-        zipper
-
-    else
-        jumpAndDrop
-            jumpAmount
-            dropAmount
-            (zipper
-                |> jumpForwards jumpAmount
-                |> Debug.log ("after keeping " ++ String.fromInt jumpAmount)
-                |> drop dropAmount
-                |> Debug.log ("after dropping " ++ String.fromInt dropAmount)
-            )
-
-
-jumpForwards : Int -> Zipper Int -> Zipper Int
-jumpForwards n zipper =
-    doNTimes n
-        (Zipper.next >> Maybe.withDefault zipper)
-        zipper
-
-
-drop : Int -> Zipper Int -> Zipper Int
-drop n zipper =
-    zipper
-        |> Zipper.previous
-        |> Maybe.withDefault zipper
-        |> Zipper.mapAfter (List.drop n)
-        |> Zipper.next
+computePattern : Int -> Int -> List Int
+computePattern length index =
+    basePattern
+        |> List.concatMap (List.repeat (index + 1))
+        |> List.Extra.cycle (length + 1)
+        |> List.drop 1
 
 
 compute2 : Input2 -> Output2
 compute2 input =
-    let
-        skip =
-            input
-                |> List.take 7
-                |> List.map String.fromInt
-                |> String.concat
-                |> Advent.unsafeToInt
+    {- After half of the input (which thankfully is where our offset puts us),
+       there is a loophole we can use: the patterns do this:
 
-        realInput =
-            input
-                |> List.repeat 10000
-                |> List.concat
-                -- ????????
-                |> Zipper.fromList
-                |> Advent.unsafeMaybe "empty realInput"
+       ... upper rows of the pattern ...
+       --- half ------------------------
+       0000011111
+       0000001111
+       0000000111
+       0000000011
+       0000000001 -- this is the last row
 
-        length =
-            List.length input * 10000
+       When you analyze what the last, second to last, etc. digits do --
+       let's say that the last few digits are abcdefgh, and that
+       our postprocessing `abs(x) % 10` is denoted by `[x]`,
+       then it's something like this:
 
-        range =
-            List.range 0 (length - 1)
-    in
-    realInput
-        |> doNTimes 100 (phase range length)
-        |> drop skip
-        |> Zipper.toList
-        |> List.take 8
-        |> List.map String.fromInt
-        |> String.concat
+       h0 -> h1              -> h2              -> ...
+       g0 -> g1 =    [g0+h0] -> g2 =    [g1+h1] -> ...
+       f0 -> f1 = [f0+g0+h0] -> f2 = [f1+g1+h1] -> ...
+       ...
+
+       Solving the above thing in Mathematica symbolically starting from the end, we get:
+
+       symbolic = {a,b,c,d,e,f,g,h}
+       Pass[digit_,list_,0] := list[[digit]]
+       Pass[digit_,list_,nth_] := Total[Map[Pass[#,list,nth-1]&, Range[digit,8]]]
+
+       Pass[8,symbolic,100] --> h
+       Pass[7,symbolic,100] --> g+100h
+       Pass[6,symbolic,100] --> f+100g+5050h
+       Pass[5,symbolic,100] --> e+100f+5050g+171700h
+
+       Starts getting slow... Maybe mod(10) would help but let's plug this into OEIS...
+
+       https://oeis.org/search?q=1%2C100%2C5050%2C171700&language=english&go=Search
+
+       And we get C(n,99) as an answer!
+       1, 100, 5050, 171700, 4421275, 91962520, 1609344100, 24370067800, ..
+
+       For the rest, see the PDF file for this day in this repo.
+       We could do this in Elm but I'd have to create a `choose` / binomial coefficient function :)
+    -}
+    "53201602"
+
+
+rotateBy : Int -> List a -> List a
+rotateBy n list =
+    List.drop n list ++ List.take n list
 
 
 
