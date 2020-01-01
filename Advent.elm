@@ -28,12 +28,14 @@ program { input, parse1, parse2, compute1, compute2, tests1, tests2 } =
                         tests1
                             |> List.reverse
                             |> List.map (runTest "*" parse1 compute1)
-
+                in
+                let
                     testResults2 =
                         tests2
                             |> List.reverse
                             |> List.map (runTest "**" parse2 compute2)
-
+                in
+                let
                     announce _ _ =
                         Debug.log "Tests passed!" ()
 
