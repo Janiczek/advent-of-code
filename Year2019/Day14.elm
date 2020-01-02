@@ -1,4 +1,4 @@
-module Year2019.Day14 exposing (Input1, Input2, Output1, Output2, compute1, compute2, input_, main, parse1, parse2, tests1, tests2)
+module Year2019.Day14 exposing (..)
 
 import Advent
     exposing
@@ -6,10 +6,12 @@ import Advent
           -- , unsafeToInt
           -- , unsafeMaybe
         )
-import Dict
+import Dict exposing (Dict)
 import Dict.Extra
 import Graph exposing (Graph)
 import List.Extra
+import Maybe.Extra
+import Set
 
 
 
@@ -24,8 +26,12 @@ type alias Input2 =
     ( RecipeGraph, ProcessingOrder )
 
 
+type alias Conversion =
+    { before : Dict String Int, after : Dict String Int }
+
+
 type alias Output1 =
-    { leftovers : List Item, deps : List Item }
+    Int
 
 
 type alias Output2 =
@@ -41,7 +47,7 @@ type alias ProcessingOrder =
 
 
 type alias Item =
-    ( Int, String )
+    ( String, Int )
 
 
 type alias RawRecipe =
@@ -79,8 +85,8 @@ parseItem : String -> Item
 parseItem string =
     case String.split " " string of
         [ quantityString, typeString ] ->
-            ( Advent.unsafeToInt quantityString
-            , typeString
+            ( typeString
+            , Advent.unsafeToInt quantityString
             )
 
         _ ->
@@ -107,7 +113,7 @@ addRecipeToGraph { inputs, output } graph =
 graphToProcessingOrder : RecipeGraph -> ProcessingOrder
 graphToProcessingOrder graph =
     graph
-        |> mapVertices Tuple.second
+        |> mapVertices Tuple.first
         |> topologicalSort
 
 
@@ -204,76 +210,94 @@ parse2 string =
 -- 3. COMPUTE (actually solve the problem)
 
 
-compute1 : Input1 -> Output1
-compute1 ( graph, order ) =
-    -- how much "ORE" needed for 1 "FUEL"
-    process1 graph order [ ( 1, "FUEL" ) ]
-
-
-process1 : RecipeGraph -> ProcessingOrder -> List Item -> { leftovers : List Item, deps : List Item }
-process1 graph order dependencies =
-    List.foldl
-        (\typeToProcess deps -> process1Type graph order typeToProcess deps)
-        { leftovers = []
-        , deps = dependencies
-        }
-        order
-        |> (\s -> { s | leftovers = List.sortBy Tuple.second s.leftovers })
-
-
-process1Type : RecipeGraph -> ProcessingOrder -> String -> { leftovers : List Item, deps : List Item } -> { leftovers : List Item, deps : List Item }
-process1Type graph order typeToProcess { leftovers, deps } =
-    deps
-        |> List.map (process1One graph order typeToProcess)
-        |> List.foldl
-            (\( overflow, deps_ ) ( accOverflow, accDeps ) ->
-                ( overflow + accOverflow
-                , deps_ ++ accDeps
-                )
-            )
-            ( 0, [] )
-        |> Tuple.mapBoth
-            (\overflow ->
-                if overflow == 0 then
-                    leftovers
-
-                else
-                    ( overflow, typeToProcess ) :: leftovers
-            )
-            addSame
-        |> (\( overflow, deps_ ) ->
-                { leftovers = overflow
-                , deps = deps_
-                }
-           )
-
-
-process1One : RecipeGraph -> ProcessingOrder -> String -> Item -> ( Int, List Item )
-process1One graph order typeToProcess (( _, type_ ) as item) =
-    if type_ == typeToProcess then
-        getDeps graph order item
+add : Item -> Dict String Int -> Dict String Int
+add ( type_, amount ) inventory =
+    if amount == 0 then
+        inventory
 
     else
-        ( 0, [ item ] )
+        Dict.update
+            type_
+            (Maybe.withDefault 0 >> (+) amount >> Just)
+            inventory
 
 
-getDeps : RecipeGraph -> ProcessingOrder -> Item -> ( Int, List Item )
-getDeps graph order item =
+addMultiple : List Item -> Dict String Int -> Dict String Int
+addMultiple items inventory =
+    List.foldl add inventory items
+
+
+remove : Item -> Dict String Int -> Maybe (Dict String Int)
+remove ( type_, amount ) inventory =
+    if amount == 0 then
+        Just inventory
+
+    else
+        Dict.get type_ inventory
+            |> Maybe.andThen
+                (\amountAvailable ->
+                    case compare amountAvailable amount of
+                        LT ->
+                            Nothing
+
+                        EQ ->
+                            Just <| Dict.remove type_ inventory
+
+                        GT ->
+                            Just <| Dict.insert type_ (amountAvailable - amount) inventory
+                )
+
+
+removeMultiple : List Item -> Dict String Int -> Maybe (Dict String Int)
+removeMultiple items inventory =
+    List.foldl
+        (\item maybeInv -> Maybe.andThen (remove item) maybeInv)
+        (Just inventory)
+        items
+
+
+eliminateType : Input1 -> String -> Conversion -> Conversion
+eliminateType input typeToProcess conversion =
+    conversion.before
+        |> Dict.toList
+        |> List.filterMap
+            (\(( type_, _ ) as item) ->
+                if type_ == typeToProcess then
+                    Just <| getDeps input item
+
+                else
+                    Nothing
+            )
+        |> List.foldl
+            (\( leftoverAmount, deps_ ) { before, after } ->
+                { before =
+                    before
+                        |> addMultiple deps_
+                , after =
+                    after
+                        |> add ( typeToProcess, leftoverAmount )
+                }
+            )
+            { conversion | before = Dict.remove typeToProcess conversion.before }
+
+
+getDeps : Input1 -> Item -> ( Int, List Item )
+getDeps (( graph, _ ) as input) item =
     let
         easyDeps =
             Graph.outgoingEdges item graph
     in
     if List.isEmpty easyDeps then
-        getTrickyDeps graph order item
+        getTrickyDeps input item
 
     else
         ( 0, easyDeps )
 
 
-getTrickyDeps : RecipeGraph -> ProcessingOrder -> Item -> ( Int, List Item )
-getTrickyDeps graph order (( quantity, type_ ) as item) =
+getTrickyDeps : Input1 -> Item -> ( Int, List Item )
+getTrickyDeps ( graph, order ) (( type_, quantity ) as item) =
     if type_ == "ORE" then
-        ( 0, [ ( quantity, type_ ) ] )
+        ( 0, [ item ] )
 
     else
         let
@@ -283,7 +307,7 @@ getTrickyDeps graph order (( quantity, type_ ) as item) =
                     |> Graph.edges
                     |> List.filterMap
                         (\{ from, to } ->
-                            if Tuple.second from == type_ then
+                            if Tuple.first from == type_ then
                                 Just from
 
                             else
@@ -297,7 +321,7 @@ getTrickyDeps graph order (( quantity, type_ ) as item) =
                     |> List.head
                     |> Advent.unsafeMaybe "possibility head"
 
-            ( possibleQuantity, _ ) =
+            ( _, possibleQuantity ) =
                 possibility
         in
         let
@@ -317,70 +341,156 @@ getTrickyDeps graph order (( quantity, type_ ) as item) =
         in
         ( overflow
         , deps
-            |> List.map (\( depQuantity, depType_ ) -> ( depQuantity * amountNeeded, depType_ ))
+            |> List.map (Tuple.mapSecond ((*) amountNeeded))
         )
 
 
-addSame : List Item -> List Item
-addSame dependencies =
-    dependencies
-        |> Dict.Extra.groupBy Tuple.second
-        |> Dict.map
-            (\type_ sameDeps ->
-                sameDeps
-                    |> List.map Tuple.first
-                    |> List.sum
-                    |> (\amount -> ( amount, type_ ))
-            )
-        |> Dict.values
+
+------------------- BETTER ABSTRACTION --------------------------
+
+
+{-| Automatically adds "ORE" to the deps and removes "FUEL" from them.
+
+    getToNFuel example13312 1 []
+    --> { before = [ ( "ORE", 13312 ) ]
+    --  , after =
+    --      [ ( "FUEL", 1 )
+    --      , ( "K", 3 )
+    --      , ( "P", 3 )
+    --      , ( "N", 4 )
+    --      , ( "D", 5 )
+    --      , ( "Q", 8 )
+    --      ]
+    --  }
+
+-}
+getToNFuel : Input1 -> Int -> List String -> Conversion
+getToNFuel (( _, order ) as input) fuelAmount allowedDeps =
+    let
+        deps =
+            allowedDeps
+                |> Set.fromList
+                |> Set.insert "ORE"
+                |> Set.remove "FUEL"
+    in
+    List.foldl
+        (eliminateType input)
+        { before = Dict.singleton "FUEL" fuelAmount -- only the `allowedDeps` will be here after we finish
+        , after = Dict.singleton "FUEL" fuelAmount -- this FUEL and some leftovers will be here
+        }
+        (List.filter (\type_ -> not (Set.member type_ deps)) order)
+
+
+
+--------------- USAGE OF THE BETTER ABSTRACTION -----------------------
+
+
+compute1 : Input1 -> Output1
+compute1 input =
+    oreNeededForNFuel input 1
+
+
+oreNeededForNFuel : Input1 -> Int -> Int
+oreNeededForNFuel input n =
+    getToNFuel input n []
+        |> .before
+        |> Dict.get "ORE"
+        |> Advent.unsafeMaybe ("ore needed for n fuel " ++ String.fromInt n)
 
 
 compute2 : Input2 -> Output2
 compute2 input =
-    -1
+    let
+        go current increment foundMax =
+            let
+                oreNeeded =
+                    oreNeededForNFuel input current
+            in
+            if oreNeeded == 1000000000000 then
+                current
+
+            else
+                let
+                    tooHigh =
+                        oreNeeded > 1000000000000
+                in
+                if tooHigh && increment == 1 then
+                    current - 1
+
+                else
+                    let
+                        newFoundMax =
+                            tooHigh || foundMax
+
+                        newIncrement =
+                            if tooHigh then
+                                max 1 (increment // 2)
+
+                            else if newFoundMax then
+                                increment
+
+                            else
+                                increment * 2
+
+                        newCurrent =
+                            if tooHigh then
+                                current - newIncrement
+
+                            else
+                                current + increment
+                    in
+                    go newCurrent newIncrement newFoundMax
+    in
+    go 1 1 False
 
 
 
 -- 4. TESTS (uh-oh, is this problem a hard one?)
 
 
+example13312 : Input1
+example13312 =
+    parse1
+        """157 ORE => 5 N
+165 ORE => 6 D
+44 X, 5 K, 1 Q, 29 N, 9 G, 48 H => 1 FUEL
+12 H, 1 G, 8 P => 9 Q
+179 ORE => 7 P
+177 ORE => 5 H
+7 D, 7 P => 2 X
+165 ORE => 2 G
+3 D, 7 N, 5 H, 10 P => 8 K"""
+
+
 tests1 : List (Test Input1 Output1)
 tests1 =
     [ Test "example1 3"
-        """157 ORE => 5 NZVS
-165 ORE => 6 DCFZ
-44 XJWVT, 5 KHKGT, 1 QDVJ, 29 NZVS, 9 GPVTF, 48 HKGWZ => 1 FUEL
-12 HKGWZ, 1 GPVTF, 8 PSHF => 9 QDVJ
-179 ORE => 7 PSHF
-177 ORE => 5 HKGWZ
-7 DCFZ, 7 PSHF => 2 XJWVT
-165 ORE => 2 GPVTF
-3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT"""
+        """157 ORE => 5 N
+165 ORE => 6 D
+44 X, 5 K, 1 Q, 29 N, 9 G, 48 H => 1 FUEL
+12 H, 1 G, 8 P => 9 Q
+179 ORE => 7 P
+177 ORE => 5 H
+7 D, 7 P => 2 X
+165 ORE => 2 G
+3 D, 7 N, 5 H, 10 P => 8 K"""
         Nothing
-        { deps = [ ( 13312, "ORE" ) ]
-        , leftovers =
-            [ ( 5, "DCFZ" )
-            , ( 3, "KHKGT" )
-            , ( 4, "NZVS" )
-            , ( 3, "PSHF" )
-            , ( 8, "QDVJ" )
-            ]
-        }
+        13312
     ]
 
 
 tests2 : List (Test Input2 Output2)
 tests2 =
     [ Test "example2 1"
-        """157 ORE => 5 NZVS
-165 ORE => 6 DCFZ
-44 XJWVT, 5 KHKGT, 1 QDVJ, 29 NZVS, 9 GPVTF, 48 HKGWZ => 1 FUEL
-12 HKGWZ, 1 GPVTF, 8 PSHF => 9 QDVJ
-179 ORE => 7 PSHF
-177 ORE => 5 HKGWZ
-7 DCFZ, 7 PSHF => 2 XJWVT
-165 ORE => 2 GPVTF
-3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT"""
+        """157 ORE => 5 N
+165 ORE => 6 D
+44 X, 5 K, 1 Q, 29 N, 9 G, 48 H => 1 FUEL
+12 H, 1 G, 8 P => 9 Q
+179 ORE => 7 P
+177 ORE => 5 H
+7 D, 7 P => 2 X
+165 ORE => 2 G
+3 D, 7 N, 5 H, 10 P => 8 K"""
         Nothing
         82892753
     ]
