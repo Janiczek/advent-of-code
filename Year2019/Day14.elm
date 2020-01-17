@@ -323,8 +323,7 @@ getTrickyDeps ( graph, order ) (( type_, quantity ) as item) =
 
             ( _, possibleQuantity ) =
                 possibility
-        in
-        let
+
             deps : List Item
             deps =
                 graph
