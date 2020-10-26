@@ -1,7 +1,6 @@
 module Year2016.Day09 exposing (main)
 
 -- made in Ellie, sorry for not adhering to the template
-
 -- ADVENT -> ADVENT -> 6
 -- A(1x5)BC -> ABBBBBC -> 7
 -- (3x3)XYZ -> XYZXYZXYZ -> 9
@@ -20,10 +19,6 @@ parser =
 
 parserHelp : List String -> Parser (Step (List String) String)
 parserHelp vs =
-    let
-        _ =
-            Debug.log "parserHelp" vs
-    in
     P.oneOf
         [ anything
             |> P.map (\v -> Loop (v :: vs))
@@ -64,10 +59,6 @@ repeated =
         |. P.symbol ")"
         |> P.andThen
             (\( chunkLength, times ) ->
-                let
-                    _ =
-                        Debug.log "x" ( chunkLength, times )
-                in
                 P.loop
                     { todo = chunkLength
                     , soFarReversed = []
@@ -109,19 +100,101 @@ decompress input =
     P.run parser input
 
 
-fixpoint : String -> Result (List P.DeadEnd) String
-fixpoint input =
-    -- runs out of memory
-    case decompress input of
-        Err x ->
-            Err x
 
-        Ok str ->
-            if str == input then
-                Ok str
+-- Part 2
 
-            else
-                fixpoint str
+
+type Expr
+    = Verbatim Int
+    | Repeat { times : Int, what : List Expr }
+
+
+count : Expr -> Int
+count expr_ =
+    case expr_ of
+        Verbatim n ->
+            n
+
+        Repeat { times, what } ->
+            times * List.sum (List.map count what)
+
+
+countFixpoint : String -> Result (List P.DeadEnd) Int
+countFixpoint input =
+    P.run parser2 input
+        |> Result.map (List.map count >> List.sum)
+
+
+parser2 : Parser (List Expr)
+parser2 =
+    P.loop [] parser2Help
+
+
+parser2Help : List Expr -> Parser (Step (List Expr) (List Expr))
+parser2Help vs =
+    P.oneOf
+        [ expr
+            |> P.map (\v -> Loop (v :: vs))
+        , P.succeed ()
+            |> P.map (\_ -> Done vs)
+        ]
+
+
+expr : Parser Expr
+expr =
+    P.oneOf
+        [ repeatExpr
+        , verbatimExpr
+        ]
+
+
+verbatimExpr : Parser Expr
+verbatimExpr =
+    P.chompUntilEndOr "("
+        |> P.getChompedString
+        |> P.andThen
+            (\str ->
+                if String.isEmpty str then
+                    P.problem ""
+
+                else
+                    P.succeed (Verbatim (String.length str))
+            )
+
+
+repeatExpr : Parser Expr
+repeatExpr =
+    P.succeed Tuple.pair
+        |. P.symbol "("
+        |= P.int
+        |. P.symbol "x"
+        |= P.int
+        |. P.symbol ")"
+        |> P.andThen
+            (\( chunkLength, times ) ->
+                P.loop
+                    { todo = chunkLength
+                    , soFarReversed = []
+                    }
+                    nChars
+                    |> P.andThen
+                        (\substring ->
+                            let
+                                _ =
+                                    Debug.log "recursing" substring
+                            in
+                            case P.run parser2 substring of
+                                Err err ->
+                                    P.problem (Debug.toString err)
+
+                                Ok what ->
+                                    P.succeed <|
+                                        Repeat
+                                            { times = times
+                                            , what = what
+                                            }
+                        )
+            )
 
 
 input_ =
@@ -133,8 +206,10 @@ main =
     --decompress "A(1x5)BC"
     --decompress "(3x3)XYZ"
     --decompress "X(8x2)(3x3)ABCY"
-    decompress input_
-    -- TODO fixpoint input_
-        |> Result.map (\str -> ( String.length str, str ))
+    --decompress input_
+    --countFixpoint "ADVENT"
+    --countFixpoint "(3x3)XYZ"
+    --countFixpoint "X(8x2)(3x3)ABCY"
+    countFixpoint input_
         |> Debug.toString
         |> Html.text
