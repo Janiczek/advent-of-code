@@ -62,15 +62,10 @@ ifReg reg pred fnTrue fnFalse cpu@CPU {..} =
     B -> if pred regB then fnTrue cpu else fnFalse cpu
 
 hlf reg cpu = cpu & onReg reg (`div` 2) & jmp 1
-
 tpl reg cpu = cpu & onReg reg (* 3) & jmp 1
-
 inc reg cpu = cpu & onReg reg (+ 1) & jmp 1
-
 jmp offset cpu@CPU {..} = cpu {pc = pc + offset}
-
 jie reg offset = ifReg reg even (jmp offset) (jmp 1)
-
 jio reg offset = ifReg reg (== 1) (jmp offset) (jmp 1)
 
 run :: CPU -> CPU
