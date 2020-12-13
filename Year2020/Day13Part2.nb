@@ -1,0 +1,2 @@
+(* Mathematica / Wolfram Cloud *)
+Values[First[First[FindInstance[41a==37b-35==971c-41==17d-7==13e-7==23f-18==29g-12==487h-72==19i-15,{a,b,c,d,e,f,g,h,i},Integers]]]]*41
