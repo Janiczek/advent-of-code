@@ -29,7 +29,7 @@
 | 22  | :heavy_check_mark: |                    | :heavy_check_mark: |                    | :heavy_check_mark: | :heavy_check_mark: |
 | 23  | :heavy_check_mark: |                    | :heavy_check_mark: |                    | :heavy_check_mark: | :heavy_check_mark: :warning: |
 | 24  | :heavy_check_mark: |                    | :heavy_check_mark: |                    | :heavy_check_mark: |                    |
-| 25  | :heavy_check_mark: |                    | :heavy_check_mark: |                    | :heavy_check_mark: |                    |
+| 25  | :heavy_check_mark: |                    | :heavy_check_mark: |                    | :heavy_check_mark: | :heavy_check_mark: |
 
 --------
 
