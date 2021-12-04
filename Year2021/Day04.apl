@@ -1,4 +1,3 @@
-in←⊃⎕NGET'/Users/martinjaniczek/Localhost/elm/advent-of-code/Year2021/day04-test.txt'1
 in←⊃⎕NGET'/Users/martinjaniczek/Localhost/elm/advent-of-code/Year2021/day04.txt'1
 d←⍎¨','(≠⊆⊢)⊃in
 n←⍴b←2⊃⎕VFI∊' '∘,¨1↓in
