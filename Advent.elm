@@ -1,5 +1,6 @@
 module Advent exposing
     ( Test
+    , digitCharToInt
     , pairings
     , program
     , removeNewlinesAtEnds
@@ -123,6 +124,13 @@ unsafeToInt string =
         |> Result.fromMaybe "Whatever"
         |> Result.mapError (\_ -> Debug.todo "Wrong input to unsafeToInt!")
         |> Result.withDefault 0
+
+
+digitCharToInt : Char -> Int
+digitCharToInt char =
+    -- 48 == Char.toCode '0'
+    -- Char.toCode '5' - 48 == 5
+    Char.toCode char - 48
 
 
 unsafeMaybe : String -> Maybe a -> a
