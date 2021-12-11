@@ -6,7 +6,9 @@
     "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
+            "Janiczek/elm-bidict": "3.0.0",
             "Janiczek/elm-graph": "2.0.1",
+            "Janiczek/elm-list-cartesian": "1.0.2",
             "avh4/elm-fifo": "1.0.4",
             "bitsoflogic/elm-radixint": "2.0.0",
             "elm/browser": "1.0.2",
@@ -23,6 +25,7 @@
             "lovasoa/elm-rolling-list": "1.1.4",
             "lynn/elm-arithmetic": "3.0.0",
             "mhoare/elm-stack": "3.1.2",
+            "owanturist/elm-union-find": "1.0.0",
             "pzp1997/assoc-list": "1.0.0",
             "rtfeldman/elm-sorter-experiment": "2.1.1",
             "the-sett/lazy-list": "1.1.1",

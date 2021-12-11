@@ -1,6 +1,8 @@
 module Advent exposing
     ( Test
     , digitCharToInt
+    , doNTimes
+    , doUntil
     , pairings
     , program
     , removeNewlinesAtEnds
@@ -173,3 +175,30 @@ pairings xs =
 
         x :: xs_ ->
             List.map (\y -> ( x, y )) xs_ ++ pairings xs_
+
+
+doNTimes : Int -> (a -> a) -> a -> a
+doNTimes n fn value =
+    if n <= 0 then
+        value
+
+    else
+        doNTimes (n - 1) fn (fn value)
+
+
+doWhile : (a -> a -> Bool) -> (a -> a) -> a -> a
+doWhile pred fn value =
+    let
+        newValue =
+            fn value
+    in
+    if pred value newValue then
+        doWhile pred fn newValue
+
+    else
+        newValue
+
+
+doUntil : (a -> a -> Bool) -> (a -> a) -> a -> a
+doUntil pred fn value =
+    doWhile (\old new -> not <| pred old new) fn value
