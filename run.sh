@@ -10,6 +10,7 @@ MODULE="Year${YEAR}.Day${DAY}"
 
 clear;
 tput reset;
+echo -en "\033c\033[3J";
 elm make "${INPUT}" --output "${OUTPUT}" && \
 echo "this.Elm.${MODULE}.init();" >>"${OUTPUT}" && \
 echo "--------------------------------------" && \
