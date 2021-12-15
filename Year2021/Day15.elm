@@ -8,6 +8,7 @@ import Advent
         )
 import Dict exposing (Dict)
 import Grid exposing (Grid)
+import List.Cartesian
 import List.Extra as List
 import PriorityQueue exposing (PriorityQueue)
 import Set exposing (Set)
@@ -54,8 +55,8 @@ parse2 string =
 -- 3. COMPUTE (actually solve the problem)
 
 
-compute1 : Input1 -> Output1
-compute1 grid =
+computeForGrid : Grid Int -> Int
+computeForGrid grid =
     let
         allPositions =
             Grid.allPositions grid
@@ -140,9 +141,55 @@ compute1 grid =
         (Dict.singleton start 0)
 
 
+enlargeGrid : Grid Int -> Grid Int
+enlargeGrid grid =
+    let
+        allPositions =
+            Grid.allPositions grid
+
+        max =
+            allPositions
+                |> List.map Tuple.first
+                |> List.maximum
+                |> Advent.unsafeMaybe "max"
+
+        cellWidth =
+            max + 1
+
+        axis =
+            List.range 0 4
+
+        minimap =
+            List.Cartesian.map2 Tuple.pair axis axis
+    in
+    grid
+        |> Grid.toList
+        |> List.concatMap
+            (\( ( x, y ), n ) ->
+                minimap
+                    |> List.map
+                        (\( xCell, yCell ) ->
+                            ( ( xCell * cellWidth + x, yCell * cellWidth + y )
+                            , (n - 1 + xCell + yCell)
+                                |> modBy 9
+                                |> (+) 1
+                            )
+                        )
+            )
+        |> Grid.fromList (\_ -> 0)
+
+
+compute1 : Input1 -> Output1
+compute1 grid =
+    grid
+        |> computeForGrid
+
+
 compute2 : Input2 -> Output2
-compute2 input =
-    -1
+compute2 grid =
+    grid
+        |> enlargeGrid
+        |> computeForGrid
 
 
 
@@ -169,7 +216,20 @@ tests1 =
 
 tests2 : List (Test Input2 Output2)
 tests2 =
-    []
+    [ Test "example"
+        """1163751742
+1381373672
+2136511328
+3694931569
+7463417111
+1319128137
+1359912421
+3125421639
+1293138521
+2311944581"""
+        Nothing
+        315
+    ]
 
 
 

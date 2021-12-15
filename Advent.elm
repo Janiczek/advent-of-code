@@ -3,6 +3,7 @@ module Advent exposing
     , digitCharToInt
     , doNTimes
     , doUntil
+    , logGrid
     , pairings
     , program
     , removeNewlinesAtEnds
@@ -10,6 +11,9 @@ module Advent exposing
     , unsafeResult
     , unsafeToInt
     )
+
+import Grid exposing (Grid)
+import List.Extra as List
 
 
 program :
@@ -236,3 +240,22 @@ doWhile pred fn value =
 doUntil : (a -> a -> Bool) -> (a -> a) -> a -> a
 doUntil pred fn value =
     doWhile (\old new -> not <| pred old new) fn value
+
+
+logGrid : String -> Grid Int -> Grid Int
+logGrid label grid =
+    let
+        data =
+            grid
+                |> Grid.toList
+                |> List.map (Tuple.mapSecond String.fromInt)
+                |> List.groupWhile (\( ( x1, _ ), _ ) ( ( x2, _ ), _ ) -> x1 == x2)
+                |> List.map (\( x, xs ) -> x :: xs)
+                |> List.transpose
+                |> List.map (List.map Tuple.second >> String.concat)
+                |> String.join "\n"
+
+        _ =
+            Debug.log (data ++ "\n            ") label
+    in
+    grid
