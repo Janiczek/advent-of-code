@@ -30,13 +30,29 @@ program { input, parse1, parse2, compute1, compute2, tests1, tests2 } =
                     testResults1 =
                         tests1
                             |> List.reverse
-                            |> List.map (runTest "*" parse1 compute1)
+                            |> List.map
+                                (\test ->
+                                    let
+                                        _ =
+                                            Debug.log "[START]" ()
+                                    in
+                                    runTest "*" parse1 compute1 test
+                                        |> Debug.log "[END]"
+                                )
                 in
                 let
                     testResults2 =
                         tests2
                             |> List.reverse
-                            |> List.map (runTest "**" parse2 compute2)
+                            |> List.map
+                                (\test ->
+                                    let
+                                        _ =
+                                            Debug.log "[START]" ()
+                                    in
+                                    runTest "**" parse2 compute2 test
+                                        |> Debug.log "[END]"
+                                )
                 in
                 let
                     announce _ _ =
@@ -45,15 +61,33 @@ program { input, parse1, parse2, compute1, compute2, tests1, tests2 } =
                     _ =
                         announce testResults1 testResults2
                 in
-                ( ( input
-                        |> parse1
-                        |> compute1
-                        |> Debug.log "Output 1"
-                  , input
-                        |> parse2
-                        |> compute2
-                        |> Debug.log "Output 2"
-                  )
+                let
+                    _ =
+                        Debug.log "Running part 1 on real input" ()
+                in
+                let
+                    output1 =
+                        input
+                            |> Debug.log "[START]"
+                            |> parse1
+                            |> compute1
+                            |> Debug.log "[END]"
+                            |> Debug.log "Output 1"
+                in
+                let
+                    _ =
+                        Debug.log "Running part 2 on real input" ()
+                in
+                let
+                    output2 =
+                        input
+                            |> Debug.log "[START]"
+                            |> parse2
+                            |> compute2
+                            |> Debug.log "[END]"
+                            |> Debug.log "Output 2"
+                in
+                ( ( output1, output2 )
                 , Cmd.none
                 )
         , update = \_ model -> ( model, Cmd.none )

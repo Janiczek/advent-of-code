@@ -171,9 +171,16 @@ allNeighbours =
 
 allNeighboursWithPositions : ( Int, Int ) -> Grid a -> List ( ( Int, Int ), a )
 allNeighboursWithPositions position grid =
-    List.map2 Tuple.pair
-        (allNeighbourPositions position)
-        (allNeighbours position grid)
+    allNeighbours_
+        |> List.filterMap
+            (\delta ->
+                let
+                    newPosition =
+                        addPosition position delta
+                in
+                at newPosition grid
+                    |> Maybe.map (Tuple.pair newPosition)
+            )
 
 
 diagonalNeighbours : ( Int, Int ) -> Grid a -> List a
@@ -183,9 +190,16 @@ diagonalNeighbours =
 
 diagonalNeighboursWithPositions : ( Int, Int ) -> Grid a -> List ( ( Int, Int ), a )
 diagonalNeighboursWithPositions position grid =
-    List.map2 Tuple.pair
-        (diagonalNeighbourPositions position)
-        (diagonalNeighbours position grid)
+    diagonalNeighbours_
+        |> List.filterMap
+            (\delta ->
+                let
+                    newPosition =
+                        addPosition position delta
+                in
+                at newPosition grid
+                    |> Maybe.map (Tuple.pair newPosition)
+            )
 
 
 orthogonalNeighbours : ( Int, Int ) -> Grid a -> List a
@@ -195,9 +209,16 @@ orthogonalNeighbours =
 
 orthogonalNeighboursWithPositions : ( Int, Int ) -> Grid a -> List ( ( Int, Int ), a )
 orthogonalNeighboursWithPositions position grid =
-    List.map2 Tuple.pair
-        (orthogonalNeighbourPositions position)
-        (orthogonalNeighbours position grid)
+    orthogonalNeighbours_
+        |> List.filterMap
+            (\delta ->
+                let
+                    newPosition =
+                        addPosition position delta
+                in
+                at newPosition grid
+                    |> Maybe.map (Tuple.pair newPosition)
+            )
 
 
 allNeighbourPositions : ( Int, Int ) -> List ( Int, Int )

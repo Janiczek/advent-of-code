@@ -21,6 +21,7 @@
             "elm-community/list-extra": "8.5.1",
             "elm-community/maybe-extra": "5.2.1",
             "elm-explorations/benchmark": "1.0.2",
+            "fifth-postulate/priority-queue": "1.0.0",
             "krisajenkins/elm-astar": "2.1.3",
             "lovasoa/elm-rolling-list": "1.1.4",
             "lynn/elm-arithmetic": "3.0.0",
