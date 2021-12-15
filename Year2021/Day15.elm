@@ -75,53 +75,62 @@ compute1 grid =
         goal =
             ( max, max )
 
-        go : PriorityQueue ( ( Int, Int ), Int ) -> Set ( Int, Int ) -> Dict ( Int, Int ) Int -> Dict ( Int, Int ) Int
+        go :
+            PriorityQueue ( ( Int, Int ), Int )
+            -> Set ( Int, Int )
+            -> Dict ( Int, Int ) Int
+            -> Int
         go queue visited acc =
             case PriorityQueue.head queue of
                 Nothing ->
-                    acc
+                    Debug.todo "cant find the goal"
 
                 Just ( todoPos, todoCost ) ->
                     let
                         queueWithoutMin =
                             PriorityQueue.tail queue
+                    in
+                    if todoPos == goal then
+                        todoCost
 
-                        newTodos : List ( ( Int, Int ), Int )
-                        newTodos =
-                            Grid.orthogonalNeighboursWithPositions
-                                todoPos
-                                grid
-                                |> List.filter (\( pos, _ ) -> not <| Set.member pos visited)
-                                |> List.map (\( pos, cost ) -> ( pos, cost + todoCost ))
+                    else
+                        let
+                            newVisited =
+                                Set.insert todoPos visited
 
-                        newVisited =
-                            Set.insert todoPos visited
+                            newTodos : List ( ( Int, Int ), Int )
+                            newTodos =
+                                Grid.orthogonalNeighboursWithPositions
+                                    todoPos
+                                    grid
+                                    |> List.filter (\( pos, _ ) -> not <| Set.member pos visited)
+                                    |> List.map (\( pos, cost ) -> ( pos, cost + todoCost ))
 
-                        ( newAcc, toAdd ) =
-                            newTodos
-                                |> List.foldl
-                                    (\(( neighbourPos, neighbourCost ) as neighbour) ( acc_, accToAdd ) ->
-                                        case Dict.get neighbourPos acc_ of
-                                            Nothing ->
-                                                ( acc_ |> Dict.insert neighbourPos neighbourCost
-                                                , neighbour :: accToAdd
-                                                )
-
-                                            Just oldCost ->
-                                                if oldCost < neighbourCost then
-                                                    ( acc_, accToAdd )
-
-                                                else
+                            ( newAcc, toAdd ) =
+                                newTodos
+                                    |> List.foldl
+                                        (\(( neighbourPos, neighbourCost ) as neighbour) ( acc_, accToAdd ) ->
+                                            case Dict.get neighbourPos acc_ of
+                                                Nothing ->
                                                     ( acc_ |> Dict.insert neighbourPos neighbourCost
                                                     , neighbour :: accToAdd
                                                     )
-                                    )
-                                    ( acc, [] )
 
-                        newQueue =
-                            List.foldl PriorityQueue.insert queueWithoutMin toAdd
-                    in
-                    go newQueue newVisited newAcc
+                                                Just oldCost ->
+                                                    if oldCost <= neighbourCost then
+                                                        ( acc_, accToAdd )
+
+                                                    else
+                                                        ( acc_ |> Dict.insert neighbourPos neighbourCost
+                                                        , neighbour :: accToAdd
+                                                        )
+                                        )
+                                        ( acc, [] )
+
+                            newQueue =
+                                List.foldl PriorityQueue.insert queueWithoutMin toAdd
+                        in
+                        go newQueue newVisited newAcc
     in
     go
         (PriorityQueue.empty Tuple.second
@@ -129,8 +138,6 @@ compute1 grid =
         )
         Set.empty
         (Dict.singleton start 0)
-        |> Dict.get goal
-        |> Advent.unsafeMaybe "compute1 get goal"
 
 
 compute2 : Input2 -> Output2
