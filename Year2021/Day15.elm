@@ -54,12 +54,6 @@ parse2 string =
 -- 3. COMPUTE (actually solve the problem)
 
 
-type alias Todo =
-    { position : ( Int, Int )
-    , cumulativeCostSoFar : Int
-    }
-
-
 compute1 : Input1 -> Output1
 compute1 grid =
     let
@@ -81,53 +75,45 @@ compute1 grid =
         goal =
             ( max, max )
 
-        go : PriorityQueue Todo -> Set ( Int, Int ) -> Dict ( Int, Int ) Int -> Dict ( Int, Int ) Int
+        go : PriorityQueue ( ( Int, Int ), Int ) -> Set ( Int, Int ) -> Dict ( Int, Int ) Int -> Dict ( Int, Int ) Int
         go queue visited acc =
             case PriorityQueue.head queue of
                 Nothing ->
                     acc
 
-                Just todo ->
+                Just ( todoPos, todoCost ) ->
                     let
                         queueWithoutMin =
                             PriorityQueue.tail queue
 
-                        newTodos : List Todo
+                        newTodos : List ( ( Int, Int ), Int )
                         newTodos =
                             Grid.orthogonalNeighboursWithPositions
-                                todo.position
+                                todoPos
                                 grid
                                 |> List.filter (\( pos, _ ) -> not <| Set.member pos visited)
-                                |> List.map
-                                    (\( pos, cost ) ->
-                                        { position = pos
-                                        , cumulativeCostSoFar =
-                                            cost + todo.cumulativeCostSoFar
-                                        }
-                                    )
+                                |> List.map (\( pos, cost ) -> ( pos, cost + todoCost ))
 
                         newVisited =
-                            Set.insert todo.position visited
+                            Set.insert todoPos visited
 
                         ( newAcc, toAdd ) =
                             newTodos
                                 |> List.foldl
-                                    (\neighbourTodo ( acc_, accToAdd ) ->
-                                        case Dict.get neighbourTodo.position acc_ of
+                                    (\(( neighbourPos, neighbourCost ) as neighbour) ( acc_, accToAdd ) ->
+                                        case Dict.get neighbourPos acc_ of
                                             Nothing ->
-                                                ( acc_
-                                                    |> Dict.insert neighbourTodo.position neighbourTodo.cumulativeCostSoFar
-                                                , neighbourTodo :: accToAdd
+                                                ( acc_ |> Dict.insert neighbourPos neighbourCost
+                                                , neighbour :: accToAdd
                                                 )
 
                                             Just oldCost ->
-                                                if oldCost < neighbourTodo.cumulativeCostSoFar then
+                                                if oldCost < neighbourCost then
                                                     ( acc_, accToAdd )
 
                                                 else
-                                                    ( acc_
-                                                        |> Dict.insert neighbourTodo.position neighbourTodo.cumulativeCostSoFar
-                                                    , neighbourTodo :: accToAdd
+                                                    ( acc_ |> Dict.insert neighbourPos neighbourCost
+                                                    , neighbour :: accToAdd
                                                     )
                                     )
                                     ( acc, [] )
@@ -138,8 +124,8 @@ compute1 grid =
                     go newQueue newVisited newAcc
     in
     go
-        (PriorityQueue.empty .cumulativeCostSoFar
-            |> PriorityQueue.insert { position = start, cumulativeCostSoFar = 0 }
+        (PriorityQueue.empty Tuple.second
+            |> PriorityQueue.insert ( start, 0 )
         )
         Set.empty
         (Dict.singleton start 0)
