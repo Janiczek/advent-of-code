@@ -1,6 +1,5 @@
 module Year2021.Day15 exposing (Input1, Input2, Output1, Output2, compute1, compute2, input_, main, parse1, parse2, tests1, tests2)
 
-import AStar
 import Advent
     exposing
         ( Test
@@ -10,6 +9,7 @@ import Advent
 import Dict exposing (Dict)
 import Grid exposing (Grid)
 import List.Extra as List
+import PriorityQueue exposing (PriorityQueue)
 import Set exposing (Set)
 
 
@@ -81,71 +81,68 @@ compute1 grid =
         goal =
             ( max, max )
 
-        go : Todo -> Set ( Int, Int ) -> Dict ( Int, Int ) Int -> Dict ( Int, Int ) Int
-        go todo visited acc =
-            if Set.member todo.position visited then
-                acc
+        go : PriorityQueue Todo -> Set ( Int, Int ) -> Dict ( Int, Int ) Int -> Dict ( Int, Int ) Int
+        go queue visited acc =
+            case PriorityQueue.head queue of
+                Nothing ->
+                    acc
 
-            else
-                let
-                    newTodos : List Todo
-                    newTodos =
-                        Grid.orthogonalNeighboursWithPositions
-                            todo.position
-                            grid
-                            |> List.filter (\( pos, _ ) -> not <| Set.member pos visited)
-                            |> List.map
-                                (\( pos, cost ) ->
-                                    { position = pos
-                                    , cumulativeCostSoFar =
-                                        cost + todo.cumulativeCostSoFar
-                                    }
-                                )
+                Just todo ->
+                    let
+                        queueWithoutMin =
+                            PriorityQueue.tail queue
 
-                    newVisited =
-                        Set.insert todo.position visited
+                        newTodos : List Todo
+                        newTodos =
+                            Grid.orthogonalNeighboursWithPositions
+                                todo.position
+                                grid
+                                |> List.filter (\( pos, _ ) -> not <| Set.member pos visited)
+                                |> List.map
+                                    (\( pos, cost ) ->
+                                        { position = pos
+                                        , cumulativeCostSoFar =
+                                            cost + todo.cumulativeCostSoFar
+                                        }
+                                    )
 
-                    newAcc =
-                        newTodos
-                            |> List.foldl
-                                (\neighbourTodo acc_ ->
-                                    Dict.update
-                                        neighbourTodo.position
-                                        (\maybeCost ->
-                                            case maybeCost of
-                                                Nothing ->
-                                                    Just neighbourTodo.cumulativeCostSoFar
+                        newVisited =
+                            Set.insert todo.position visited
 
-                                                Just oldCost ->
-                                                    Just <| min oldCost neighbourTodo.cumulativeCostSoFar
-                                        )
-                                        acc_
-                                )
-                                acc
+                        ( newAcc, toAdd ) =
+                            newTodos
+                                |> List.foldl
+                                    (\neighbourTodo ( acc_, accToAdd ) ->
+                                        case Dict.get neighbourTodo.position acc_ of
+                                            Nothing ->
+                                                ( acc_
+                                                    |> Dict.insert neighbourTodo.position neighbourTodo.cumulativeCostSoFar
+                                                , neighbourTodo :: accToAdd
+                                                )
 
-                    smallestNextTodo =
-                        newAcc
-                            |> Dict.toList
-                            |> List.filter (\( pos, _ ) -> not <| Set.member pos newVisited)
-                            |> List.sortBy Tuple.second
-                            |> List.head
-                in
-                case smallestNextTodo of
-                    Nothing ->
-                        newAcc
+                                            Just oldCost ->
+                                                if oldCost < neighbourTodo.cumulativeCostSoFar then
+                                                    ( acc_, accToAdd )
 
-                    Just ( pos, cost ) ->
-                        go
-                            { position = pos
-                            , cumulativeCostSoFar = cost
-                            }
-                            newVisited
-                            newAcc
+                                                else
+                                                    ( acc_
+                                                        |> Dict.insert neighbourTodo.position neighbourTodo.cumulativeCostSoFar
+                                                    , neighbourTodo :: accToAdd
+                                                    )
+                                    )
+                                    ( acc, [] )
+
+                        newQueue =
+                            List.foldl PriorityQueue.insert queueWithoutMin toAdd
+                    in
+                    go newQueue newVisited newAcc
     in
     go
-        { position = start, cumulativeCostSoFar = 0 }
+        (PriorityQueue.empty .cumulativeCostSoFar
+            |> PriorityQueue.insert { position = start, cumulativeCostSoFar = 0 }
+        )
         Set.empty
-        Dict.empty
+        (Dict.singleton start 0)
         |> Dict.get goal
         |> Advent.unsafeMaybe "compute1 get goal"
 
