@@ -4,7 +4,7 @@ YEAR="${1}"
 DAY="${2}"
 DAY_NO_ZEROS="$(echo $DAY | sed 's/^0*//')"
 INPUT="Template.elm"
-OUTPUT="Year${YEAR}/Day${DAY}.elm"
+OUTPUT="src/Year${YEAR}/Day${DAY}.elm"
 PUZZLE_URL="https://adventofcode.com/${YEAR}/day/${DAY_NO_ZEROS}/input"
 PUZZLE_FILE="input${YEAR}${DAY}.txt"
 
