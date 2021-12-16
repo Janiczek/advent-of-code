@@ -104,8 +104,14 @@ computeForGrid grid =
                                 Grid.orthogonalNeighboursWithPositions
                                     todoPos
                                     grid
-                                    |> List.filter (\( pos, _ ) -> not <| Set.member pos visited)
-                                    |> List.map (\( pos, cost ) -> ( pos, cost + todoCost ))
+                                    |> List.filterMap
+                                        (\( pos, cost ) ->
+                                            if Set.member pos visited then
+                                                Nothing
+
+                                            else
+                                                Just ( pos, cost + todoCost )
+                                        )
 
                             ( newAcc, toAdd ) =
                                 newTodos
