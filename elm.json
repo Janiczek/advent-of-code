@@ -11,6 +11,7 @@
             "Janiczek/elm-list-cartesian": "1.0.2",
             "avh4/elm-fifo": "1.0.4",
             "bitsoflogic/elm-radixint": "2.0.0",
+            "cmditch/elm-bigint": "2.0.1",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.5",
             "elm/html": "1.0.0",
@@ -43,6 +44,7 @@
             "erlandsona/assoc-set": "1.1.0",
             "mdgriffith/style-elements": "5.0.2",
             "robinheghan/murmur3": "1.0.0",
+            "rtfeldman/elm-hex": "1.0.0",
             "skyqrose/assoc-list-extra": "1.0.0",
             "turboMaCk/any-dict": "2.6.0",
             "zwilias/elm-utf-tools": "2.0.1"
