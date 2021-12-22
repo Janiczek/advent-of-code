@@ -118,12 +118,9 @@ set pos val (Grid g) =
     Grid { g | dict = Dict.insert pos val g.dict }
 
 
-map : (( Int, Int ) -> a -> b) -> Grid a -> Grid b
+map : (( Int, Int ) -> a -> a) -> Grid a -> Grid a
 map fn (Grid g) =
-    Grid
-        { default = \pos -> fn pos (g.default pos)
-        , dict = Dict.map fn g.dict
-        }
+    Grid { g | dict = Dict.map fn g.dict }
 
 
 mapPositions : List ( Int, Int ) -> (( Int, Int ) -> a -> a) -> Grid a -> Grid a

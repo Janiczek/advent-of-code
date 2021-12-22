@@ -12,7 +12,9 @@ module Advent exposing
     , unsafeToInt
     )
 
+import Dict exposing (Dict)
 import Grid exposing (Grid)
+import List.Cartesian
 import List.Extra as List
 
 
@@ -245,10 +247,57 @@ doUntil pred fn value =
 logGrid : String -> Grid Int -> Grid Int
 logGrid label grid =
     let
+        dict : Dict ( Int, Int ) Int
+        dict =
+            Grid.toDict grid
+
+        allPositions : List ( Int, Int )
+        allPositions =
+            Dict.keys dict
+
+        xs_ : List Int
+        xs_ =
+            List.map Tuple.first allPositions
+
+        ys_ : List Int
+        ys_ =
+            List.map Tuple.second allPositions
+
+        minX : Int
+        minX =
+            xs_
+                |> List.minimum
+                |> unsafeMaybe "minX"
+
+        maxX : Int
+        maxX =
+            xs_
+                |> List.maximum
+                |> unsafeMaybe "maxX"
+
+        minY : Int
+        minY =
+            ys_
+                |> List.minimum
+                |> unsafeMaybe "minY"
+
+        maxY : Int
+        maxY =
+            ys_
+                |> List.maximum
+                |> unsafeMaybe "maxY"
+
         data =
-            grid
-                |> Grid.toList
-                |> List.map (Tuple.mapSecond String.fromInt)
+            List.Cartesian.map2
+                (\x y ->
+                    ( ( x, y )
+                    , Dict.get ( x, y ) dict
+                        |> Maybe.map String.fromInt
+                        |> Maybe.withDefault "."
+                    )
+                )
+                (List.range minX maxX)
+                (List.range minY maxY)
                 |> List.groupWhile (\( ( x1, _ ), _ ) ( ( x2, _ ), _ ) -> x1 == x2)
                 |> List.map (\( x, xs ) -> x :: xs)
                 |> List.transpose
