@@ -7,6 +7,7 @@ module Advent exposing
     , pairings
     , program
     , removeNewlinesAtEnds
+    , unsafeHead
     , unsafeMaybe
     , unsafeResult
     , unsafeToInt
@@ -166,6 +167,16 @@ unsafeToInt string =
         |> Result.fromMaybe "Whatever"
         |> Result.mapError (\_ -> Debug.todo "Wrong input to unsafeToInt!")
         |> Result.withDefault 0
+
+
+unsafeHead : List a -> a
+unsafeHead list =
+    case list of
+        x :: _ ->
+            x
+
+        _ ->
+            Debug.todo "Wrong input to unsafeHead!"
 
 
 digitCharToInt : Char -> Int
