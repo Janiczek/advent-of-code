@@ -1,3 +1,6 @@
+import Day02.Companion.Hand.*
+import Day02.Companion.Outcome.*
+
 class Day02 {
     companion object {
         const val inputFile = "input202202.txt"
@@ -34,20 +37,20 @@ class Day02 {
             return handScore + outcomeScore
         }
 
-        private val elfHand = mapOf("A" to Hand.Rock, "B" to Hand.Paper, "C" to Hand.Scissors)
-        private val p1Hand  = mapOf("X" to Hand.Rock, "Y" to Hand.Paper, "Z" to Hand.Scissors)
-        private val p2Outcome = mapOf("X" to Outcome.Lose, "Y" to Outcome.Draw, "Z" to Outcome.Win)
-        private val handScores = mapOf(Hand.Rock to 1, Hand.Paper to 2, Hand.Scissors to 3)
-        private val outcomeScores = mapOf(Outcome.Lose to 0, Outcome.Draw to 3, Outcome.Win to 6)
+        private val elfHand = mapOf("A" to Rock, "B" to Paper, "C" to Scissors)
+        private val p1Hand  = mapOf("X" to Rock, "Y" to Paper, "Z" to Scissors)
+        private val p2Outcome = mapOf("X" to Lose, "Y" to Draw, "Z" to Win)
+        private val handScores = mapOf(Rock to 1, Paper to 2, Scissors to 3)
+        private val outcomeScores = mapOf(Lose to 0, Draw to 3, Win to 6)
         private val outcomeFromHands = mapOf( // (Elf to You) to Outcome
-            (Hand.Rock     to Hand.Rock) to Outcome.Draw, (Hand.Rock     to Hand.Paper) to Outcome.Win,  (Hand.Rock     to Hand.Scissors) to Outcome.Lose,
-            (Hand.Paper    to Hand.Rock) to Outcome.Lose, (Hand.Paper    to Hand.Paper) to Outcome.Draw, (Hand.Paper    to Hand.Scissors) to Outcome.Win,
-            (Hand.Scissors to Hand.Rock) to Outcome.Win,  (Hand.Scissors to Hand.Paper) to Outcome.Lose, (Hand.Scissors to Hand.Scissors) to Outcome.Draw,
+            (Rock     to Rock) to Draw, (Rock     to Paper) to Win,  (Rock     to Scissors) to Lose,
+            (Paper    to Rock) to Lose, (Paper    to Paper) to Draw, (Paper    to Scissors) to Win,
+            (Scissors to Rock) to Win,  (Scissors to Paper) to Lose, (Scissors to Scissors) to Draw,
         )
         private val handFromOutcome = mapOf( // (Elf to Outcome) to You
-            (Hand.Rock     to Outcome.Draw) to Hand.Rock, (Hand.Rock     to Outcome.Win)  to Hand.Paper, (Hand.Rock     to Outcome.Lose) to Hand.Scissors,
-            (Hand.Paper    to Outcome.Lose) to Hand.Rock, (Hand.Paper    to Outcome.Draw) to Hand.Paper, (Hand.Paper    to Outcome.Win)  to Hand.Scissors,
-            (Hand.Scissors to Outcome.Win)  to Hand.Rock, (Hand.Scissors to Outcome.Lose) to Hand.Paper, (Hand.Scissors to Outcome.Draw) to Hand.Scissors,
+            (Rock     to Draw) to Rock, (Rock     to Win)  to Paper, (Rock     to Lose) to Scissors,
+            (Paper    to Lose) to Rock, (Paper    to Draw) to Paper, (Paper    to Win)  to Scissors,
+            (Scissors to Win)  to Rock, (Scissors to Lose) to Paper, (Scissors to Draw) to Scissors,
         )
     }
 }
