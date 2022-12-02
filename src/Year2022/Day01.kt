@@ -1,4 +1,4 @@
-class Year2022Day01 {
+class Day01 {
     companion object {
         const val inputFile = "input202201.txt"
 
