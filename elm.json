@@ -22,6 +22,7 @@
             "elm-community/html-extra": "3.4.0",
             "elm-community/list-extra": "8.5.1",
             "elm-community/maybe-extra": "5.2.1",
+            "elm-community/result-extra": "2.4.0",
             "elm-explorations/benchmark": "1.0.2",
             "fifth-postulate/priority-queue": "1.0.0",
             "krisajenkins/elm-astar": "2.1.3",
