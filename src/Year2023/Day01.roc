@@ -25,22 +25,78 @@ firstAndLastNum = \chars ->
         Ok n -> n
 
 
-replaceWordsWithNumbers = \str ->
-    # FIXME: This has the issue that we're replacing "two" earlier than "eight", and so
-    # we end up with "eigh23" instead of "8wo3" for the input string "eightwothree"
-    # Perhaps we need to walk each line and try the replacement for each prefix,
-    # stopping at the first successful one?
-    str
-    |> Str.replaceEach "zero" "0"
-    |> Str.replaceEach "one" "1"
-    |> Str.replaceEach "two" "2"
-    |> Str.replaceEach "three" "3"
-    |> Str.replaceEach "four" "4"
-    |> Str.replaceEach "five" "5"
-    |> Str.replaceEach "six" "6"
-    |> Str.replaceEach "seven" "7"
-    |> Str.replaceEach "eight" "8"
-    |> Str.replaceEach "nine" "9"
+firstMatch : List (List Str) -> Str
+firstMatch = \ps ->
+    when ps is
+        [] -> "boo"
+        [prefix, ..] ->
+            when prefix is
+                [] -> firstMatch (List.dropFirst ps 1)
+                [fst, ..] ->
+                    if isDigitChar fst then
+                        fst
+                    else
+                        str = Str.joinWith prefix ""
+                        if Str.startsWith str "zero"  then "0" else
+                        if Str.startsWith str "one"   then "1" else
+                        if Str.startsWith str "two"   then "2" else
+                        if Str.startsWith str "three" then "3" else
+                        if Str.startsWith str "four"  then "4" else
+                        if Str.startsWith str "five"  then "5" else
+                        if Str.startsWith str "six"   then "6" else
+                        if Str.startsWith str "seven" then "7" else
+                        if Str.startsWith str "eight" then "8" else
+                        if Str.startsWith str "nine"  then "9" else
+                        firstMatch (List.dropFirst ps 1)
+
+lastMatch : List (List Str) -> Str
+lastMatch = \ss ->
+    when ss is
+        [] -> 
+            "boo"
+
+        [suffix,..] ->
+            when suffix is
+                [] -> lastMatch (List.dropFirst ss 1)
+                [.., last] ->
+                    if isDigitChar last then
+                        last
+                    else
+                        str = Str.joinWith suffix ""
+                        if Str.endsWith str "zero"  then "0" else
+                        if Str.endsWith str "one"   then "1" else
+                        if Str.endsWith str "two"   then "2" else
+                        if Str.endsWith str "three" then "3" else
+                        if Str.endsWith str "four"  then "4" else
+                        if Str.endsWith str "five"  then "5" else
+                        if Str.endsWith str "six"   then "6" else
+                        if Str.endsWith str "seven" then "7" else
+                        if Str.endsWith str "eight" then "8" else
+                        if Str.endsWith str "nine"  then "9" else
+                        lastMatch (List.dropFirst ss 1)
+
+prefixes : List a -> List (List a)
+prefixes = \list ->
+    prefixesHelp list []
+
+prefixesHelp : List a, List (List a) -> List (List a)
+prefixesHelp = \todo,acc ->
+    when todo is
+        [] -> 
+            acc
+        _ ->
+            prefixesHelp 
+                (List.dropFirst todo 1) 
+                (List.append acc todo)
+
+
+suffixes : List a -> List (List a)
+suffixes = \list ->
+    list
+    |> List.reverse
+    |> prefixes
+    |> List.map List.reverse
+
 
 part1 = \input ->
     input
@@ -56,13 +112,25 @@ part1 = \input ->
 
 part2 = \input ->
     input
-    |> List.map replaceWordsWithNumbers
-    |> Str.joinWith "\n"
+    |> List.map (\line ->
+        chars = Str.graphemes line
+        [ chars
+            |> prefixes
+            |> firstMatch
+        , chars
+            |> suffixes
+            |> lastMatch
+        ]
+        |> firstAndLastNum
+    )
+    #|> List.map (\x -> Str.joinWith x ":")
+    #|> Str.joinWith "\n"
+    |> List.sum
+    |> Num.toStr
     |> Stdout.line
-    #|> part1
 
 main = 
-    part2 testInput2
+    part2 realInput
 
 testInput1 =
   [
