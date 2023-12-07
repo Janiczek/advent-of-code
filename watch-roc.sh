@@ -6,6 +6,5 @@ INPUT="src/Year${YEAR}/Day${DAY}.roc"
 
 chokidar '**/*.roc' | while read WHATEVER; do
   clear && tput reset && echo -en "\033c\033[3J"
-  # roc test "${INPUT}" &&
-  RUST_BACKTRACE=full roc dev "${INPUT}"
+  roc test "${INPUT}" && RUST_BACKTRACE=full roc dev "${INPUT}"
 done;
