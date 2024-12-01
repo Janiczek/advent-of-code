@@ -3,3 +3,9 @@
 /node_modules
 /yarn.lock
 /input*.txt
+
+# Gleam
+*.beam
+*.ez
+/build
+erl_crash.dump
