@@ -1,6 +1,8 @@
+import extra
+import gleam/dict
 import gleam/int
-import gleam/io
 import gleam/list
+import gleam/result
 import gleam/string
 
 pub type Input =
@@ -28,12 +30,14 @@ pub fn pt_1(input: Input) {
   let sorted_xs = xs |> list.sort(by: int.compare)
   let sorted_ys = ys |> list.sort(by: int.compare)
   list.map2(sorted_xs, sorted_ys, with: fn(x, y) { int.absolute_value(x - y) })
-  |> list.fold(from: 0, with: int.add)
+  |> int.sum
 }
 
 pub fn pt_2(input: Input) {
   let #(xs, ys) = input
+  let freqs = extra.frequencies(ys)
+
   xs
-  |> list.map(fn(x) { x * list.count(ys, where: fn(y) { x == y }) })
-  |> list.fold(from: 0, with: int.add)
+  |> list.map(fn(x) { x * { dict.get(freqs, x) |> result.unwrap(0) } })
+  |> int.sum
 }
