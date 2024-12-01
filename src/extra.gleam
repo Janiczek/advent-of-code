@@ -17,10 +17,8 @@ fn smush_aux(xs: List(x), length: Int, zero: x, fun: fn(x, x) -> x) -> x {
       let half = length / 2
       let #(left, right) = list.split(xs, at: half)
       let left_handle = task.async(fn() { smush_aux(left, half, zero, fun) })
-      let right_handle =
-        task.async(fn() { smush_aux(right, length - half, zero, fun) })
+      let right_result = smush_aux(right, length - half, zero, fun)
       let left_result = task.await_forever(left_handle)
-      let right_result = task.await_forever(right_handle)
       fun(left_result, right_result)
     }
   }
