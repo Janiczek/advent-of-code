@@ -9,3 +9,4 @@
 *.ez
 /build
 erl_crash.dump
+/input
