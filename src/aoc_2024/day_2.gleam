@@ -39,7 +39,7 @@ pub fn pt_2(input: List(List(Int))) {
   input
   |> list.count(fn(line) {
     line
-    |> extra.selections
-    |> list.any(fn(selection) { is_ok(selection.1) })
+    |> list.combinations(list.length(line) - 1)
+    |> list.any(is_ok)
   })
 }

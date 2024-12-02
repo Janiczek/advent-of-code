@@ -50,11 +50,6 @@ pub fn remove_at(xs: List(a), at i: Int) -> List(a) {
   list.append(list.take(xs, i), list.drop(xs, i + 1))
 }
 
-/// selections([5,10,2]) -> [ #(5,[10,2]), #(10,[5,2]), #(2,[5,10]) ]
-pub fn selections(xs: List(a)) -> List(#(a, List(a))) {
-  list.index_map(xs, fn(x, i) { #(x, remove_at(xs, i)) })
-}
-
 pub fn yolo_int(x: String) -> Int {
   let assert Ok(n) = int.parse(x)
   n
