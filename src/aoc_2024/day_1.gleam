@@ -17,9 +17,7 @@ pub fn parse(input: String) -> Input {
     let #(xs, ys) = acc
     case row {
       [x, y] -> {
-        let assert Ok(xx) = int.parse(x)
-        let assert Ok(yy) = int.parse(y)
-        #([xx, ..xs], [yy, ..ys])
+        #([extra.yolo_int(x), ..xs], [extra.yolo_int(y), ..ys])
       }
       _ -> panic as "Bad input"
     }

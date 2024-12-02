@@ -9,7 +9,7 @@ pub fn parse(input: String) -> List(List(Int)) {
   |> list.map(fn(line) {
     line
     |> string.split(" ")
-    |> list.filter_map(int.parse)
+    |> list.map(extra.yolo_int)
   })
 }
 
