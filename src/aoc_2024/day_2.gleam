@@ -22,7 +22,7 @@ fn is_descending(line: List(Int)) {
 }
 
 fn has_good_differences(line: List(Int)) {
-  extra.consecutive_pairs(line)
+  list.window_by_2(line)
   |> list.map(fn(pair) { int.absolute_value(pair.0 - pair.1) })
   |> list.all(fn(n) { n >= 1 && n <= 3 })
 }

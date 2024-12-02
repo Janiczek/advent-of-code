@@ -1,7 +1,7 @@
 import gleam/dict.{type Dict}
 import gleam/list
+import gleam/option
 import gleam/otp/task
-import gleam/result
 
 /// Needs the operation to be associative and there to be a zero (monoid).
 /// Uses parallelism under the hood.
@@ -39,19 +39,9 @@ pub fn pmap2(xs: List(x), ys: List(y), with fun: fn(x, y) -> z) -> List(z) {
 pub fn frequencies(xs: List(a)) -> Dict(a, Int) {
   xs
   |> list.fold(from: dict.new(), with: fn(counter, x) {
-    let old: Int =
-      counter
-      |> dict.get(x)
-      |> result.unwrap(0)
-
     counter
-    |> dict.insert(x, old + 1)
+    |> dict.upsert(x, fn(old) { option.unwrap(old, 0) + 1 })
   })
-}
-
-/// consecutive_pairs([5,10,2]) -> [ #(5,10), #(10,2) ]
-pub fn consecutive_pairs(xs: List(a)) -> List(#(a, a)) {
-  list.map2(xs, list.drop(xs, 1), fn(x, y) { #(x, y) })
 }
 
 /// remove_at([5,10,2],1) -> [5,2]
