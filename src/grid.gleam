@@ -120,8 +120,50 @@ pub fn in_dir(
   Ok(coords)
 }
 
-// TODO in_dir_greedy (doesn't care about boundaries?)
-// TODO in_dir_wraparound (goes to the other side?)
+/// Always returns a list, even if incomplete
+pub fn in_dir_greedy(start: XY, dir: Dir, count: Int) -> List(XY) {
+  deltas(dir, count)
+  |> list.map(fn(d) { xy_add(start, d) })
+}
+
+/// Always returns a list, wraps around to the other side if it hits a boundary
+pub fn in_dir_wraparound(
+  grid: Grid(a),
+  start: XY,
+  dir: Dir,
+  count: Int,
+) -> List(XY) {
+  deltas(dir, count)
+  |> list.map(fn(d) { xy_add(start, d) |> wraparound(grid.dims) })
+}
+
+pub fn wraparound(xy: XY, dims: Dims) -> XY {
+  xy
+  |> wraparound_x(dims)
+  |> wraparound_y(dims)
+}
+
+pub fn wraparound_x(xy: XY, dims: Dims) -> XY {
+  case xy.0 < 0 {
+    True -> wraparound_x(#(xy.0 + dims.width, xy.1), dims)
+    False ->
+      case xy.0 >= dims.width {
+        True -> wraparound_x(#(xy.0 - dims.width, xy.1), dims)
+        False -> xy
+      }
+  }
+}
+
+pub fn wraparound_y(xy: XY, dims: Dims) -> XY {
+  case xy.1 < 0 {
+    True -> wraparound_y(#(xy.0, xy.1 + dims.height), dims)
+    False ->
+      case xy.1 >= dims.height {
+        True -> wraparound_y(#(xy.0, xy.1 - dims.height), dims)
+        False -> xy
+      }
+  }
+}
 
 pub fn get(grid: Grid(a), xy: XY) -> Result(a, Nil) {
   dict.get(grid.data, xy)
