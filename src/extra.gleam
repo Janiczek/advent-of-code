@@ -3,6 +3,7 @@ import gleam/int
 import gleam/list
 import gleam/option
 import gleam/otp/task
+import gleam/string
 
 /// Needs the operation to be associative and there to be a zero (monoid).
 /// Uses parallelism under the hood.
@@ -53,4 +54,12 @@ pub fn remove_at(xs: List(a), at i: Int) -> List(a) {
 pub fn yolo_int(x: String) -> Int {
   let assert Ok(n) = int.parse(x)
   n
+}
+
+/// strip_left("Hello World", "Hello ") -> "World"
+pub fn strip_left(from input: String, remove prefix: String) -> String {
+  case string.starts_with(input, prefix) {
+    True -> input |> string.drop_start(string.length(prefix))
+    False -> input
+  }
 }
