@@ -3,6 +3,7 @@ import gleam/bool
 import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
+import gleam/order
 import gleam/result
 import gleam/set.{type Set}
 import gleam/string
@@ -82,38 +83,19 @@ pub fn pt_1(input: Input) {
 }
 
 fn fix_order(manual: List(Int), dependents: Dict(Int, Set(Int))) -> List(Int) {
-  let manual_set = set.from_list(manual)
-  fix_order_rec(
-    dependents
-      |> dict.filter(fn(k, _) { set.contains(manual_set, k) })
-      |> dict.map_values(fn(_, v) { set.intersection(v, manual_set) })
-      |> dict.to_list,
-    [],
-  )
-  |> list.reverse
-}
-
-fn fix_order_rec(todos: List(#(Int, Set(Int))), acc: List(Int)) -> List(Int) {
-  case list.is_empty(todos) {
-    True -> acc
-    False -> {
-      let #(usable, rest) =
-        list.partition(todos, fn(todo_) { set.is_empty(todo_.1) })
-      let usable_pages: List(Int) = usable |> list.map(fn(todo_) { todo_.0 })
-      let cleaned_rest: List(#(Int, Set(Int))) =
-        rest
-        |> list.map(fn(todo_) {
-          #(
-            todo_.0,
-            set.filter(todo_.1, fn(item) {
-              !list.contains(usable_pages, any: item)
-            }),
-          )
-        })
-      let new_acc: List(Int) = list.append(acc, usable_pages)
-      fix_order_rec(cleaned_rest, new_acc)
+  list.sort(manual, by: fn(a, b) {
+    let a_dependents = dict.get(dependents, a) |> result.unwrap(set.new())
+    case set.contains(a_dependents, b) {
+      True -> order.Lt
+      False -> {
+        let b_dependents = dict.get(dependents, b) |> result.unwrap(set.new())
+        case set.contains(b_dependents, a) {
+          True -> order.Gt
+          False -> order.Eq
+        }
+      }
     }
-  }
+  })
 }
 
 pub fn pt_2(input: Input) {
