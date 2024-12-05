@@ -63,15 +63,3 @@ pub fn strip_left(from input: String, remove prefix: String) -> String {
     False -> input
   }
 }
-
-/// Splits list into a #(good, bad) based on a predicate (true, false)
-pub fn list_partition(xs: List(a), pred: fn(a) -> Bool) -> #(List(a), List(a)) {
-  let #(good_rev, bad_rev) =
-    list.fold(xs, #([], []), fn(acc, x) {
-      case pred(x) {
-        True -> #([x, ..acc.0], acc.1)
-        False -> #(acc.0, [x, ..acc.1])
-      }
-    })
-  #(list.reverse(good_rev), list.reverse(bad_rev))
-}

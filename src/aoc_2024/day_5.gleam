@@ -98,7 +98,7 @@ fn fix_order_rec(todos: List(#(Int, Set(Int))), acc: List(Int)) -> List(Int) {
     True -> acc
     False -> {
       let #(usable, rest) =
-        extra.list_partition(todos, fn(todo_) { set.is_empty(todo_.1) })
+        list.partition(todos, fn(todo_) { set.is_empty(todo_.1) })
       let usable_pages: List(Int) = usable |> list.map(fn(todo_) { todo_.0 })
       let cleaned_rest: List(#(Int, Set(Int))) =
         rest
