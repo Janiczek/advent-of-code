@@ -1,5 +1,6 @@
 import gleam/bool
 import gleam/dict.{type Dict}
+import gleam/int
 import gleam/list
 import gleam/result
 import gleam/string
@@ -16,7 +17,7 @@ pub fn xy_scale(xy: XY, k: Int) -> XY {
 }
 
 pub type Dims {
-  Dims(width: Int, height: Int)
+  Dims(min_x: Int, max_x: Int, min_y: Int, max_y: Int, width: Int, height: Int)
 }
 
 pub type Grid(a) {
@@ -49,6 +50,19 @@ pub const all_dirs = [
   TopLeft,
 ]
 
+pub fn turn_90deg_right(dir: Dir) -> Dir {
+  case dir {
+    Top -> Right
+    TopRight -> BottomRight
+    Right -> Bottom
+    BottomRight -> BottomLeft
+    Bottom -> Left
+    BottomLeft -> TopLeft
+    Left -> Top
+    TopLeft -> TopRight
+  }
+}
+
 pub fn from_string(input: String) -> Grid(String) {
   let rows = string.split(input, "\n")
   let grid =
@@ -67,7 +81,15 @@ pub fn from_string(input: String) -> Grid(String) {
     |> result.map(string.to_graphemes)
     |> result.unwrap([])
     |> list.length
-  let dims = Dims(width, height)
+  let dims =
+    Dims(
+      min_x: 0,
+      max_x: width - 1,
+      min_y: 0,
+      max_y: height - 1,
+      width: width,
+      height: height,
+    )
   Grid(grid, dims)
 }
 
@@ -75,12 +97,61 @@ pub fn map(grid: Grid(a), fun: fn(XY, a) -> b) -> Grid(b) {
   Grid(dims: grid.dims, data: grid.data |> dict.map_values(fun))
 }
 
+pub fn filter_map(grid: Grid(a), fun: fn(XY, a) -> Result(b, Nil)) -> Grid(b) {
+  Grid(
+    dims: grid.dims,
+    data: grid.data
+      |> dict.to_list
+      |> list.filter_map(fn(kv) {
+        case fun(kv.0, kv.1) {
+          Ok(v2) -> Ok(#(kv.0, v2))
+          Error(Nil) -> Error(Nil)
+        }
+      })
+      |> dict.from_list,
+  )
+}
+
+pub fn find_exact(grid: Grid(a), needle: a) -> Result(XY, Nil) {
+  grid.data
+  |> dict.to_list
+  |> list.find_map(fn(kv) {
+    case kv.1 == needle {
+      True -> Ok(kv.0)
+      False -> Error(Nil)
+    }
+  })
+}
+
 pub fn values(grid: Grid(a)) -> List(a) {
   dict.values(grid.data)
 }
 
 pub fn in_grid(grid: Grid(a), xy: XY) -> Bool {
-  xy.0 >= 0 && xy.1 >= 0 && xy.0 < grid.dims.width && xy.1 < grid.dims.height
+  xy.0 >= grid.dims.min_x
+  && xy.0 <= grid.dims.max_x
+  && xy.1 >= grid.dims.min_y
+  && xy.1 <= grid.dims.max_y
+}
+
+pub fn extend(dims: Dims, xy: XY) -> Dims {
+  let new_min_x = int.min(dims.min_x, xy.0)
+  let new_max_x = int.max(dims.max_x, xy.0)
+  let new_min_y = int.min(dims.min_y, xy.1)
+  let new_max_y = int.max(dims.max_y, xy.1)
+  Dims(
+    min_x: new_min_x,
+    max_x: new_max_x,
+    min_y: new_min_y,
+    max_y: new_max_y,
+    width: new_max_x - new_min_x + 1,
+    height: new_max_y - new_min_y + 1,
+  )
+}
+
+/// Expands the grid dimensions if the `xy` is outside the grid.
+pub fn insert(grid: Grid(a), xy: XY, value: a) -> Grid(a) {
+  Grid(dims: extend(grid.dims, xy), data: dict.insert(grid.data, xy, value))
 }
 
 pub fn delta(dir: Dir) -> XY {
@@ -120,10 +191,15 @@ pub fn in_dir(
   Ok(coords)
 }
 
-/// Always returns a list, even if incomplete
+/// Always returns a list, even if out of bounds
 pub fn in_dir_greedy(start: XY, dir: Dir, count: Int) -> List(XY) {
   deltas(dir, count)
   |> list.map(fn(d) { xy_add(start, d) })
+}
+
+/// Can get out of bounds.
+pub fn step(start: XY, dir: Dir, count: Int) -> XY {
+  xy_add(start, xy_scale(delta(dir), count))
 }
 
 /// Always returns a list, wraps around to the other side if it hits a boundary
