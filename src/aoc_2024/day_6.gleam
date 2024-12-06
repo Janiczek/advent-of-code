@@ -1,3 +1,5 @@
+import extra
+import gleam/list
 import gleam/set.{type Set}
 import grid.{type Dir, type Grid, type XY}
 
@@ -50,7 +52,8 @@ pub fn pt_2(input: Input) {
       grid.Top,
     )
   orig_path
-  |> set.filter(fn(step: XY) {
+  |> set.to_list
+  |> extra.pmap(fn(step: XY) {
     pt_2_has_loop(
       grid.insert(input.grid, step, Nil),
       set.new(),
@@ -58,7 +61,7 @@ pub fn pt_2(input: Input) {
       grid.Top,
     )
   })
-  |> set.size
+  |> list.count(fn(bool) { bool })
 }
 
 fn pt_2_has_loop(
