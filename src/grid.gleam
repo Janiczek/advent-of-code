@@ -12,6 +12,10 @@ pub fn xy_add(a: XY, b: XY) -> XY {
   #(a.0 + b.0, a.1 + b.1)
 }
 
+pub fn xy_sub(a: XY, b: XY) -> XY {
+  #(a.0 - b.0, a.1 - b.1)
+}
+
 pub fn xy_scale(xy: XY, k: Int) -> XY {
   #(xy.0 * k, xy.1 * k)
 }
@@ -97,6 +101,10 @@ pub fn map(grid: Grid(a), fun: fn(XY, a) -> b) -> Grid(b) {
   Grid(dims: grid.dims, data: grid.data |> dict.map_values(fun))
 }
 
+pub fn filter(grid: Grid(a), pred: fn(XY, a) -> Bool) -> Grid(a) {
+  Grid(..grid, data: grid.data |> dict.filter(pred))
+}
+
 pub fn filter_map(grid: Grid(a), fun: fn(XY, a) -> Result(b, Nil)) -> Grid(b) {
   Grid(
     dims: grid.dims,
@@ -123,15 +131,23 @@ pub fn find_exact(grid: Grid(a), needle: a) -> Result(XY, Nil) {
   })
 }
 
+pub fn to_list(grid: Grid(a)) -> List(#(XY, a)) {
+  dict.to_list(grid.data)
+}
+
 pub fn values(grid: Grid(a)) -> List(a) {
   dict.values(grid.data)
 }
 
 pub fn in_grid(grid: Grid(a), xy: XY) -> Bool {
-  xy.0 >= grid.dims.min_x
-  && xy.0 <= grid.dims.max_x
-  && xy.1 >= grid.dims.min_y
-  && xy.1 <= grid.dims.max_y
+  in_dims(grid.dims, xy)
+}
+
+pub fn in_dims(dims: Dims, xy: XY) -> Bool {
+  xy.0 >= dims.min_x
+  && xy.0 <= dims.max_x
+  && xy.1 >= dims.min_y
+  && xy.1 <= dims.max_y
 }
 
 pub fn extend(dims: Dims, xy: XY) -> Dims {

@@ -1,7 +1,6 @@
 import extra
 import gleam/int
 import gleam/list
-import gleam/order
 import gleam/string
 
 pub type Row {
