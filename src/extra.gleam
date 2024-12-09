@@ -1,5 +1,6 @@
 import gleam/dict.{type Dict}
 import gleam/int
+import gleam/io
 import gleam/list
 import gleam/option
 import gleam/otp/task
@@ -62,4 +63,11 @@ pub fn strip_left(from input: String, remove prefix: String) -> String {
     True -> input |> string.drop_start(string.length(prefix))
     False -> input
   }
+}
+
+pub fn log(label: String, value: a) -> a {
+  io.print_error(label <> ": ")
+  let _ = io.debug(value)
+  io.println_error("")
+  value
 }

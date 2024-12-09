@@ -4,6 +4,7 @@ import gleam/int
 import gleam/list
 import gleam/result
 import gleam/string
+import gleamy/priority_queue.{type Queue}
 
 pub type XY =
   #(Int, Int)
@@ -101,6 +102,17 @@ pub fn map(grid: Grid(a), fun: fn(XY, a) -> b) -> Grid(b) {
   Grid(dims: grid.dims, data: grid.data |> dict.map_values(fun))
 }
 
+pub fn update(grid: Grid(a), at xy: XY, fun fun: fn(a) -> a) -> Grid(a) {
+  case dict.get(grid.data, xy) {
+    Error(Nil) -> grid
+    Ok(a) -> Grid(..grid, data: dict.insert(grid.data, xy, fun(a)))
+  }
+}
+
+pub fn delete(grid: Grid(a), at xy: XY) -> Grid(a) {
+  Grid(..grid, data: dict.delete(grid.data, xy))
+}
+
 pub fn filter(grid: Grid(a), pred: fn(XY, a) -> Bool) -> Grid(a) {
   Grid(..grid, data: grid.data |> dict.filter(pred))
 }
@@ -137,6 +149,10 @@ pub fn to_list(grid: Grid(a)) -> List(#(XY, a)) {
 
 pub fn values(grid: Grid(a)) -> List(a) {
   dict.values(grid.data)
+}
+
+pub fn keys(grid: Grid(a)) -> List(XY) {
+  dict.keys(grid.data)
 }
 
 pub fn in_grid(grid: Grid(a), xy: XY) -> Bool {
@@ -263,4 +279,139 @@ pub fn get(grid: Grid(a), xy: XY) -> Result(a, Nil) {
 
 pub fn get_all(grid: Grid(a), xys: List(XY)) -> Result(List(a), Nil) {
   list.try_map(xys, fn(xy) { dict.get(grid.data, xy) })
+}
+
+/// Will only report neighbours _inside_ the grid
+pub fn neighbours(
+  grid: Grid(a),
+  xy: XY,
+  dirs: List(Dir),
+) -> List(#(XY, Result(a, Nil))) {
+  dirs
+  |> list.filter_map(fn(dir) {
+    let new = step(xy, dir, 1)
+    case in_grid(grid, new) {
+      False -> Error(Nil)
+      True -> {
+        let item = get(grid, new)
+        Ok(#(new, item))
+      }
+    }
+  })
+}
+
+pub fn are_neighbours(a: XY, b: XY, dirs: List(Dir)) -> Bool {
+  list.any(dirs, fn(dir) { step(a, dir, 1) == b })
+}
+
+/// Dijkstra BFS. Maybe later we'll do A* instead.
+pub fn shortest_path(
+  from origin: XY,
+  to goal: XY,
+  neighbours neighbours: fn(XY) -> List(XY),
+) -> Result(#(List(XY), Int), Nil) {
+  shortest_path_aux(
+    goal: goal,
+    seen: dict.new(),
+    todos: priority_queue.from_list(
+      [ShortestPathTodo(origin, [], 0)],
+      compare_todo,
+    ),
+    neighbours: neighbours,
+  )
+}
+
+type ShortestPathTodo {
+  ShortestPathTodo(current: XY, steps_rev: List(XY), steps_count: Int)
+}
+
+fn shortest_path_aux(
+  goal goal: XY,
+  seen seen: Dict(XY, Int),
+  todos todos: Queue(ShortestPathTodo),
+  neighbours neighbours: fn(XY) -> List(XY),
+) -> Result(#(List(XY), Int), Nil) {
+  case priority_queue.pop(todos) {
+    Error(Nil) -> Error(Nil)
+    Ok(#(todo_, rest_of_todos)) -> {
+      use <- bool.guard(
+        when: todo_.current == goal,
+        return: Ok(#(list.reverse(todo_.steps_rev), todo_.steps_count)),
+      )
+      // We're guaranteed by filtering from previous steps that this path will be the best seen for the XY:
+      let new_seen = dict.insert(seen, todo_.current, todo_.steps_count)
+      let new_neighbours =
+        neighbours(todo_.current)
+        |> list.filter(fn(neighbour) {
+          case dict.get(seen, neighbour) {
+            Error(Nil) -> True
+            Ok(previously_best_count) ->
+              previously_best_count > todo_.steps_count + 1
+          }
+        })
+      let added_todos =
+        new_neighbours
+        |> list.map(fn(neighbour) {
+          ShortestPathTodo(
+            current: neighbour,
+            steps_rev: [neighbour, ..todo_.steps_rev],
+            steps_count: todo_.steps_count + 1,
+          )
+        })
+      let new_todos =
+        list.fold(
+          over: added_todos,
+          from: rest_of_todos,
+          with: priority_queue.push,
+        )
+      shortest_path_aux(goal, new_seen, new_todos, neighbours)
+    }
+  }
+}
+
+fn compare_todo(a: ShortestPathTodo, b: ShortestPathTodo) {
+  int.compare(a.steps_count, b.steps_count)
+}
+
+/// Will silently do nothing if there's nothing to move
+pub fn move(grid: Grid(a), from origin: XY, to target: XY) {
+  case dict.get(grid.data, origin) {
+    Error(Nil) -> grid
+    Ok(a) ->
+      Grid(
+        ..grid,
+        data: grid.data
+          |> dict.delete(origin)
+          |> dict.insert(target, a),
+      )
+  }
+}
+
+pub fn show(
+  grid grid: Grid(a),
+  fun fun: fn(a) -> #(String, Result(String, Nil)),
+  empty empty: String,
+) -> String {
+  let x_range = list.range(from: grid.dims.min_x, to: grid.dims.max_x)
+  list.range(from: grid.dims.min_y, to: grid.dims.max_y)
+  |> list.map(fn(y) {
+    let #(ascii, metadata) =
+      x_range
+      |> list.map(fn(x) {
+        case get(grid, #(x, y)) {
+          Error(Nil) -> #(empty, Error(Nil))
+          Ok(a) -> fun(a)
+        }
+      })
+      |> list.unzip
+
+    [
+      ascii |> string.concat,
+      metadata
+        |> result.values
+        |> string.join(", "),
+    ]
+    |> string.join("  ")
+  })
+  |> string.join("\n")
 }
