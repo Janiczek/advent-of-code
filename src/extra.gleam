@@ -71,3 +71,10 @@ pub fn log(label: String, value: a) -> a {
   io.println_error("")
   value
 }
+
+pub fn do_if(subject: a, pred pred: Bool, fun fun: fn(a) -> a) -> a {
+  case pred {
+    True -> fun(subject)
+    False -> subject
+  }
+}
