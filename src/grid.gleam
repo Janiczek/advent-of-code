@@ -415,3 +415,10 @@ pub fn show(
   })
   |> string.join("\n")
 }
+
+pub fn find_all_exact(grid: Grid(a), a: a) -> List(XY) {
+  grid.data
+  |> dict.to_list()
+  |> list.filter(fn(kv) { kv.1 == a })
+  |> list.map(fn(kv) { kv.0 })
+}

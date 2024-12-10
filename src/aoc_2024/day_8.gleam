@@ -55,7 +55,6 @@ fn antinodes_xy_pt2(dims: Dims, pair: #(XY, XY)) -> List(XY) {
   )
 }
 
-/// Also return the start point
 fn cast_ray(dims: Dims, start: XY, d: XY, acc: List(XY)) -> List(XY) {
   let next = grid.xy_add(start, d)
   case grid.in_dims(dims, next) {
