@@ -3,15 +3,18 @@ import gleam/bool
 import gleam/int
 import gleam/list
 import gleam/string
+import pocket_watch
 import rememo/memo
 
 pub fn parse(input: String) -> List(Int) {
+  use <- pocket_watch.simple("parse")
   input
   |> string.split(" ")
   |> list.map(extra.yolo_int)
 }
 
 pub fn pt_1(input: List(Int)) {
+  use <- pocket_watch.simple("pt_1")
   use cache <- memo.create()
   input
   |> list.map(c(_, 25, cache))
@@ -19,6 +22,7 @@ pub fn pt_1(input: List(Int)) {
 }
 
 pub fn pt_2(input: List(Int)) {
+  use <- pocket_watch.simple("pt_2")
   use cache <- memo.create()
   input
   |> list.map(c(_, 75, cache))
