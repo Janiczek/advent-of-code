@@ -1,7 +1,6 @@
 import extra
 import gleam/deque.{type Deque}
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/order
 import gleam/string
