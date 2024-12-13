@@ -3,6 +3,7 @@ import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
 import gleam/result
+import gleam/set.{type Set}
 import gleam/string
 import gleamy/priority_queue.{type Queue}
 
@@ -181,6 +182,14 @@ pub fn extend(dims: Dims, xy: XY) -> Dims {
   )
 }
 
+/// Doesn't expand the grid if the `xy` is outside the grid. Just ignores it.
+pub fn set(grid: Grid(a), xy: XY, value: a) -> Grid(a) {
+  case in_grid(grid, xy) {
+    True -> Grid(..grid, data: dict.insert(grid.data, xy, value))
+    False -> grid
+  }
+}
+
 /// Expands the grid dimensions if the `xy` is outside the grid.
 pub fn insert(grid: Grid(a), xy: XY, value: a) -> Grid(a) {
   Grid(dims: extend(grid.dims, xy), data: dict.insert(grid.data, xy, value))
@@ -287,14 +296,13 @@ pub fn neighbours(
   xy: XY,
   dirs: List(Dir),
 ) -> List(#(XY, Result(a, Nil))) {
-  dirs
-  |> list.filter_map(fn(dir) {
-    let new = step(xy, dir, 1)
-    case in_grid(grid, new) {
+  raw_neighbours(xy, dirs)
+  |> list.filter_map(fn(neighbour) {
+    case in_grid(grid, neighbour) {
       False -> Error(Nil)
       True -> {
-        let item = get(grid, new)
-        Ok(#(new, item))
+        let item = get(grid, neighbour)
+        Ok(#(neighbour, item))
       }
     }
   })
@@ -302,6 +310,10 @@ pub fn neighbours(
 
 pub fn are_neighbours(a: XY, b: XY, dirs: List(Dir)) -> Bool {
   list.any(dirs, fn(dir) { step(a, dir, 1) == b })
+}
+
+pub fn raw_neighbours(xy: XY, dirs: List(Dir)) -> List(XY) {
+  list.map(dirs, fn(dir) { step(xy, dir, 1) })
 }
 
 /// Dijkstra BFS. Maybe later we'll do A* instead.
@@ -387,7 +399,7 @@ pub fn move(grid: Grid(a), from origin: XY, to target: XY) {
   }
 }
 
-pub fn show(
+pub fn to_string(
   grid grid: Grid(a),
   fun fun: fn(a) -> #(String, Result(String, Nil)),
   empty empty: String,
@@ -421,4 +433,165 @@ pub fn find_all_exact(grid: Grid(a), a: a) -> List(XY) {
   |> dict.to_list()
   |> list.filter(fn(kv) { kv.1 == a })
   |> list.map(fn(kv) { kv.0 })
+}
+
+pub fn group_consecutive(grid: Grid(a), dirs: List(Dir)) -> List(#(a, List(XY))) {
+  grid.data
+  |> dict.to_list
+  |> list.group(by: fn(kv) { kv.1 })
+  |> dict.map_values(fn(a, group) {
+    let todos = list.map(group, fn(kv) { kv.0 })
+    group_consecutive_split(dirs, todos, [])
+    |> list.map(fn(group) { #(a, group) })
+  })
+  |> dict.values
+  |> list.flatten
+}
+
+/// In principle: [(1,1),(1,0),(9,9)] -> [[(1,1),(1,0)], [(9,9)]]
+///    [],                       [(1,1),(1,0),(9,9)]
+/// -> [[(1,1)]],                [(1,0),(9,9)]
+/// -> [[(1,0),(1,1)]],          [(9,9)]
+/// -> [[(1,0),(1,1)], [(9,9)]], []
+/// This could be done with some kind of union-find structure, but I didn't feel
+/// like implementing that.
+fn group_consecutive_split(
+  dirs: List(Dir),
+  todos: List(XY),
+  acc_groups: List(Set(XY)),
+) -> List(List(XY)) {
+  case todos {
+    [] ->
+      acc_groups
+      |> group_consecutive_fixup(dirs)
+      |> list.map(set.to_list)
+    [todo_, ..rest] -> {
+      let neighbours_ = raw_neighbours(todo_, dirs)
+
+      let result =
+        acc_groups
+        |> list.fold(#(False, []), fn(new_acc, group) {
+          use <- bool.guard(
+            when: new_acc.0,
+            return: #(new_acc.0, [group, ..new_acc.1]),
+          )
+          case
+            list.any(neighbours_, fn(neighbour) {
+              set.contains(group, neighbour)
+            })
+          {
+            True -> #(True, [set.insert(group, todo_), ..new_acc.1])
+            False -> #(new_acc.0, [group, ..new_acc.1])
+          }
+        })
+
+      // If we didn't find the right group to insert into, let's make a new group
+      let new_acc = case result.0 {
+        True -> result.1
+        False -> [set.from_list([todo_]), ..result.1]
+      }
+
+      group_consecutive_split(dirs, rest, new_acc)
+    }
+  }
+}
+
+fn group_consecutive_fixup(
+  groups: List(Set(XY)),
+  dirs: List(Dir),
+) -> List(Set(XY)) {
+  let result =
+    groups
+    |> list.combination_pairs
+    |> list.find_map(fn(combination) {
+      let group_1_neighbours =
+        combination.0
+        |> set.to_list
+        |> list.flat_map(raw_neighbours(_, dirs))
+        |> set.from_list
+      let group_2 = combination.1
+
+      case set.is_empty(set.intersection(group_1_neighbours, group_2)) {
+        True -> Error(Nil)
+        False -> {
+          let combined_group = set.union(combination.0, combination.1)
+          let groups_without_combined =
+            groups
+            |> list.filter(fn(group) {
+              group != combination.0 && group != combination.1
+            })
+          Ok([combined_group, ..groups_without_combined])
+        }
+      }
+    })
+
+  case result {
+    Error(Nil) -> groups
+    Ok(new_groups) -> group_consecutive_fixup(new_groups, dirs)
+  }
+}
+
+pub fn count(grid: Grid(a), pred: fn(XY, a) -> Bool) -> Int {
+  grid.data
+  |> dict.filter(pred)
+  |> dict.size
+}
+
+pub fn extend_edge(grid: Grid(a), with value: a) -> Grid(a) {
+  //        #####
+  // 111    #111#
+  // 121 -> #121#
+  // 111    #111#
+  //        #####
+  let xl = grid.dims.min_x - 1
+  let xr = grid.dims.max_x + 1
+  let yt = grid.dims.min_y - 1
+  let yb = grid.dims.max_y + 1
+  let x_range = list.range(xl, xr)
+  let y_range = list.range(grid.dims.min_y, grid.dims.max_y)
+  let edges: Dict(XY, a) =
+    [
+      x_range |> list.map(fn(x) { #(#(x, yt), value) }),
+      x_range |> list.map(fn(x) { #(#(x, yb), value) }),
+      y_range |> list.map(fn(y) { #(#(xl, y), value) }),
+      y_range |> list.map(fn(y) { #(#(xr, y), value) }),
+    ]
+    |> list.flatten
+    |> dict.from_list
+  Grid(dims: extend_edge_dims(grid.dims), data: dict.merge(grid.data, edges))
+}
+
+fn extend_edge_dims(dims: Dims) -> Dims {
+  Dims(
+    min_x: dims.min_x - 1,
+    max_x: dims.max_x + 1,
+    min_y: dims.min_y - 1,
+    max_y: dims.max_y + 1,
+    width: dims.width + 2,
+    height: dims.height + 2,
+  )
+}
+
+pub fn remove_bottom_row(grid: Grid(a)) -> Grid(a) {
+  Grid(
+    dims: Dims(
+      ..grid.dims,
+      max_y: grid.dims.max_y - 1,
+      height: grid.dims.height - 1,
+    ),
+    data: grid.data
+      |> dict.filter(fn(xy, _) { xy.1 != grid.dims.max_y }),
+  )
+}
+
+pub fn remove_right_column(grid: Grid(a)) -> Grid(a) {
+  Grid(
+    dims: Dims(
+      ..grid.dims,
+      max_x: grid.dims.max_x - 1,
+      width: grid.dims.width - 1,
+    ),
+    data: grid.data
+      |> dict.filter(fn(xy, _) { xy.0 != grid.dims.max_x }),
+  )
 }
