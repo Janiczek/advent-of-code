@@ -22,6 +22,10 @@ pub fn xy_scale(xy: XY, k: Int) -> XY {
   #(xy.0 * k, xy.1 * k)
 }
 
+pub fn xy_mod(a: XY, m: XY) -> XY {
+  #(a.0 % m.0, a.1 % m.1)
+}
+
 pub type Dims {
   Dims(min_x: Int, max_x: Int, min_y: Int, max_y: Int, width: Int, height: Int)
 }
@@ -67,6 +71,23 @@ pub fn turn_90deg_right(dir: Dir) -> Dir {
     Left -> Top
     TopLeft -> TopRight
   }
+}
+
+pub const empty_dims: Dims = Dims(
+  width: 0,
+  height: 0,
+  min_x: 0,
+  max_x: 0,
+  min_y: 0,
+  max_y: 0,
+)
+
+pub fn from_list(items: List(#(XY, a))) -> Grid(a) {
+  items
+  |> list.fold(
+    from: Grid(dims: empty_dims, data: dict.new()),
+    with: fn(acc, kv) { insert(acc, kv.0, kv.1) },
+  )
 }
 
 pub fn from_string(input: String) -> Grid(String) {
@@ -383,6 +404,11 @@ fn shortest_path_aux(
 
 fn compare_todo(a: ShortestPathTodo, b: ShortestPathTodo) {
   int.compare(a.steps_count, b.steps_count)
+}
+
+/// TODO: doesn't do anything about the data outside the new dims.
+pub fn with_dims(grid: Grid(a), dims: Dims) -> Grid(a) {
+  Grid(dims: dims, data: grid.data)
 }
 
 /// Will silently do nothing if there's nothing to move

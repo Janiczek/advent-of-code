@@ -78,3 +78,6 @@ pub fn do_if(subject: a, pred pred: Bool, fun fun: fn(a) -> a) -> a {
     False -> subject
   }
 }
+
+@external(erlang, "timer", "sleep")
+pub fn sleep(ms: Int) -> Nil
