@@ -22,6 +22,10 @@ pub fn xy_scale(xy: XY, k: Int) -> XY {
   #(xy.0 * k, xy.1 * k)
 }
 
+pub fn xy_mul(a: XY, b: XY) -> XY {
+  #(a.0 * b.0, a.1 * b.1)
+}
+
 pub fn xy_mod(a: XY, m: XY) -> XY {
   #(a.0 % m.0, a.1 % m.1)
 }
@@ -83,11 +87,7 @@ pub const empty_dims: Dims = Dims(
 )
 
 pub fn from_list(items: List(#(XY, a))) -> Grid(a) {
-  items
-  |> list.fold(
-    from: Grid(dims: empty_dims, data: dict.new()),
-    with: fn(acc, kv) { insert(acc, kv.0, kv.1) },
-  )
+  insert_all(Grid(dims: empty_dims, data: dict.new()), items)
 }
 
 pub fn from_string(input: String) -> Grid(String) {
@@ -620,4 +620,25 @@ pub fn remove_right_column(grid: Grid(a)) -> Grid(a) {
     data: grid.data
       |> dict.filter(fn(xy, _) { xy.0 != grid.dims.max_x }),
   )
+}
+
+pub fn first_in_dir(grid: Grid(a), xy: XY, a: a, dir: Dir) -> Result(XY, Nil) {
+  let next_xy = step(xy, dir, 1)
+  use <- bool.guard(when: !in_grid(grid, next_xy), return: Error(Nil))
+  case dict.get(grid.data, next_xy) {
+    Error(Nil) -> first_in_dir(grid, next_xy, a, dir)
+    Ok(item) ->
+      case item == a {
+        True -> Ok(next_xy)
+        False -> first_in_dir(grid, next_xy, a, dir)
+      }
+  }
+}
+
+pub fn delete_all(grid: Grid(a), xys: List(XY)) -> Grid(a) {
+  list.fold(xys, grid, delete)
+}
+
+pub fn insert_all(grid: Grid(a), kvs: List(#(XY, a))) -> Grid(a) {
+  list.fold(kvs, grid, fn(acc_grid, kv) { insert(acc_grid, kv.0, kv.1) })
 }

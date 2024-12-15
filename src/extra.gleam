@@ -81,3 +81,30 @@ pub fn do_if(subject: a, pred pred: Bool, fun fun: fn(a) -> a) -> a {
 
 @external(erlang, "timer", "sleep")
 pub fn sleep(ms: Int) -> Nil
+
+pub fn add_line_numbers(str: String) -> String {
+  str
+  |> string.split("\n")
+  |> list.index_map(fn(s, i) {
+    {
+      int.to_string(i)
+      |> string.pad_start(3, with: " ")
+    }
+    <> "  "
+    <> s
+  })
+  |> string.join("\n")
+}
+
+pub fn string_set(str: String, at: Int, value: String) -> String {
+  str
+  |> string.to_graphemes
+  // PERF: fold_until
+  |> list.index_map(fn(s, i) {
+    case i == at {
+      True -> value
+      False -> s
+    }
+  })
+  |> string.join("")
+}
