@@ -9,12 +9,14 @@ import gleam/result
 import gleam/set.{type Set}
 import gleamy/priority_queue.{type Queue}
 import grid.{type Dir, type Grid, type XY}
+import pocket_watch
 
 pub type Input {
   Input(grid: Grid(Nil), reindeer: XY, exit: XY)
 }
 
 pub fn parse(input: String) -> Input {
+  use <- pocket_watch.simple("parse")
   let grid: Grid(Nil) =
     input
     |> grid.from_string
@@ -33,6 +35,7 @@ pub fn parse(input: String) -> Input {
 }
 
 pub fn pt_1(input: Input) {
+  use <- pocket_watch.simple("part 1")
   pt_1_aux(
     input,
     todos: priority_queue.from_list(
@@ -128,6 +131,7 @@ fn find_cost(step: Step) -> Int {
 }
 
 pub fn pt_2(input: Input) {
+  use <- pocket_watch.simple("part 2")
   let steps =
     pt_2_aux(
       input,
@@ -145,16 +149,16 @@ pub fn pt_2(input: Input) {
       seen: dict.new(),
       best: 109_496,
     )
-  io.println_error(
-    grid.to_string(input.grid, fn(xy, c) {
-      case set.contains(steps, xy), c {
-        True, Error(Nil) -> #("O", Error(Nil))
-        True, Ok(Nil) -> panic as "walked over a wall?"
-        False, Error(Nil) -> #(".", Error(Nil))
-        False, Ok(Nil) -> #("#", Error(Nil))
-      }
-    }),
-  )
+  //io.println_error(
+  //  grid.to_string(input.grid, fn(xy, c) {
+  //    case set.contains(steps, xy), c {
+  //      True, Error(Nil) -> #("O", Error(Nil))
+  //      True, Ok(Nil) -> panic as "walked over a wall?"
+  //      False, Error(Nil) -> #(".", Error(Nil))
+  //      False, Ok(Nil) -> #("#", Error(Nil))
+  //    }
+  //  }),
+  //)
 
   set.size(steps)
 }
@@ -222,16 +226,15 @@ fn pt_2_aux(
                     }
                   },
                 )
-              io.debug(#(
-                "found",
-                todo_.cost,
-                set.size(pt_2_final(input.exit, new_seen)),
-              ))
+              //io.debug(#(
+              //  "found",
+              //  todo_.cost,
+              //  set.size(pt_2_final(input.exit, new_seen)),
+              //))
               let new_best = int.min(best, todo_.cost)
               pt_2_aux(
                 input,
                 todos: rest_of_todos,
-                // |> list.filter(fn(t) { t.cost <= new_best }),
                 seen: new_seen,
                 best: new_best,
               )
