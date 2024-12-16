@@ -1,7 +1,6 @@
 import gleam/bool
 import gleam/dict.{type Dict}
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/order
@@ -150,12 +149,12 @@ pub fn pt_2(input: Input) {
       best: 109_496,
     )
   //io.println_error(
-  //  grid.to_string(input.grid, fn(xy, c) {
+  //  grid.to_string_simple(input.grid, fn(xy, c) {
   //    case set.contains(steps, xy), c {
-  //      True, Error(Nil) -> #("O", Error(Nil))
+  //      True, Error(Nil) -> "O"
   //      True, Ok(Nil) -> panic as "walked over a wall?"
-  //      False, Error(Nil) -> #(".", Error(Nil))
-  //      False, Ok(Nil) -> #("#", Error(Nil))
+  //      False, Error(Nil) -> "."
+  //      False, Ok(Nil) -> "#"
   //    }
   //  }),
   //)

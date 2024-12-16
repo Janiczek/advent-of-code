@@ -448,6 +448,20 @@ pub fn to_string(
   |> string.join("\n")
 }
 
+pub fn to_string_simple(
+  grid grid: Grid(a),
+  fun fun: fn(XY, Result(a, Nil)) -> String,
+) -> String {
+  let x_range = list.range(from: grid.dims.min_x, to: grid.dims.max_x)
+  list.range(from: grid.dims.min_y, to: grid.dims.max_y)
+  |> list.map(fn(y) {
+    x_range
+    |> list.map(fn(x) { fun(#(x, y), get(grid, #(x, y))) })
+    |> string.concat
+  })
+  |> string.join("\n")
+}
+
 pub fn find_all_exact(grid: Grid(a), a: a) -> List(XY) {
   grid.data
   |> dict.to_list()
