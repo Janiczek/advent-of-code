@@ -112,25 +112,8 @@ fn step_pt2(seconds: Int, robots: List(Robot)) {
     True -> {
       io.println_error("------------------------")
       io.debug(#(seconds, "seconds"))
-      show(robots)
       step_pt2(seconds + 1, step(robots))
     }
     False -> step_pt2(seconds + 1, step(robots))
   }
-}
-
-fn show(robots: List(Robot)) {
-  robots
-  |> list.map(fn(robot) { #(robot.p, "#") })
-  |> grid.from_list
-  |> grid.with_dims(Dims(
-    width: room.0,
-    height: room.1,
-    min_x: 0,
-    min_y: 0,
-    max_x: room.0 - 1,
-    max_y: room.1 - 1,
-  ))
-  |> grid.to_string(fun: fn(item) { #(item, Error(Nil)) }, empty: ".")
-  |> io.println_error
 }

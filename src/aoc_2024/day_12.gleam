@@ -1,9 +1,7 @@
 import extra
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/set.{type Set}
-import gleam/string
 import grid.{type Grid, type XY}
 
 pub fn parse(input: String) -> Grid(String) {

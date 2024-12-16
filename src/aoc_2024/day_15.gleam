@@ -1,4 +1,3 @@
-import extra
 import gleam/bool
 import gleam/int
 import gleam/io
@@ -63,11 +62,9 @@ pub fn pt_1(input: Input) {
 pub fn pt_2(input: Input) {
   let wider_grid = widen(input.grid)
   let wider_robot = grid.xy_mul(input.robot, #(2, 1))
-  let #(final_grid, final_robot) =
+  let #(final_grid, _) =
     input.moves
     |> list.fold(from: #(wider_grid, wider_robot), with: wider_step)
-  //io.println_error("============== FINAL =============")
-  //show2(final_grid, final_robot)
   final_grid
   |> grid.filter(fn(_, e) { e == BoxLeft })
   |> grid.keys
@@ -141,7 +138,6 @@ fn widen(grid: Grid(Entity)) -> Grid(Entity2) {
 
 fn wider_step(state: #(Grid(Entity2), XY), dir: Dir) -> #(Grid(Entity2), XY) {
   let #(grid, robot) = state
-  //show2(grid, robot)
   let next_xy = grid.step(robot, dir, 1)
   case grid.get(grid, next_xy) {
     Error(Nil) -> #(grid, next_xy)
@@ -308,34 +304,4 @@ fn left_in_dir(e: Entity2, xy: XY, dir: Dir) -> XY {
     grid.Bottom, BoxRight -> left_for_right(xy)
     _, _ -> panic as "diagonals? huh?"
   }
-}
-
-fn show2(grid: Grid(Entity2), robot: XY) -> Nil {
-  let without_robot =
-    grid.to_string(
-      grid,
-      fn(e) {
-        case e {
-          Wall2 -> #("#", Error(Nil))
-          BoxLeft -> #("[", Error(Nil))
-          BoxRight -> #("]", Error(Nil))
-        }
-      },
-      ".",
-    )
-  let with_robot =
-    without_robot
-    |> string.split("\n")
-    |> list.index_map(fn(s, i) {
-      case i == robot.1 {
-        True -> s |> extra.string_set(robot.0, "@")
-        False -> s
-      }
-    })
-    |> string.join("\n")
-  io.println_error("     0123456789")
-  io.println_error(
-    with_robot
-    |> extra.add_line_numbers,
-  )
 }

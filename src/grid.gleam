@@ -427,20 +427,14 @@ pub fn move(grid: Grid(a), from origin: XY, to target: XY) {
 
 pub fn to_string(
   grid grid: Grid(a),
-  fun fun: fn(a) -> #(String, Result(String, Nil)),
-  empty empty: String,
+  fun fun: fn(XY, Result(a, Nil)) -> #(String, Result(String, Nil)),
 ) -> String {
   let x_range = list.range(from: grid.dims.min_x, to: grid.dims.max_x)
   list.range(from: grid.dims.min_y, to: grid.dims.max_y)
   |> list.map(fn(y) {
     let #(ascii, metadata) =
       x_range
-      |> list.map(fn(x) {
-        case get(grid, #(x, y)) {
-          Error(Nil) -> #(empty, Error(Nil))
-          Ok(a) -> fun(a)
-        }
-      })
+      |> list.map(fn(x) { fun(#(x, y), get(grid, #(x, y))) })
       |> list.unzip
 
     [
@@ -641,4 +635,30 @@ pub fn delete_all(grid: Grid(a), xys: List(XY)) -> Grid(a) {
 
 pub fn insert_all(grid: Grid(a), kvs: List(#(XY, a))) -> Grid(a) {
   list.fold(kvs, grid, fn(acc_grid, kv) { insert(acc_grid, kv.0, kv.1) })
+}
+
+pub fn rotate_cw(dir: Dir) -> Dir {
+  case dir {
+    Left -> Top
+    TopLeft -> TopRight
+    Top -> Right
+    TopRight -> BottomRight
+    Right -> Bottom
+    BottomRight -> BottomLeft
+    Bottom -> Left
+    BottomLeft -> TopLeft
+  }
+}
+
+pub fn rotate_ccw(dir: Dir) -> Dir {
+  case dir {
+    Right -> Top
+    TopRight -> TopLeft
+    Top -> Left
+    TopLeft -> BottomLeft
+    Left -> Bottom
+    BottomLeft -> BottomRight
+    Bottom -> Right
+    BottomRight -> TopRight
+  }
 }
