@@ -4,12 +4,14 @@ import gleam/int
 import gleam/list
 import gleam/order
 import gleam/string
+import pocket_watch
 
 pub type Block {
   Block(id: Int, length: Int)
 }
 
 pub fn parse(input: String) -> Deque(Block) {
+  use <- pocket_watch.simple("parse")
   input
   |> string.to_graphemes
   |> list.index_map(fn(len, i) {
@@ -26,6 +28,7 @@ pub fn parse(input: String) -> Deque(Block) {
 }
 
 pub fn pt_1(input: Deque(Block)) {
+  use <- pocket_watch.simple("part 1")
   pt_1_fix(todos: input, done: [])
   |> checksum
 }
@@ -115,6 +118,7 @@ fn checksum(blocks: List(Block)) {
 }
 
 pub fn pt_2(input: Deque(Block)) {
+  use <- pocket_watch.simple("part 2")
   let final = pt_2_fix(input, todos: input)
   checksum(final)
 }

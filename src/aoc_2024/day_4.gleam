@@ -3,15 +3,18 @@ import gleam/list
 import gleam/result
 import gleam/string
 import grid.{type Grid, type XY}
+import pocket_watch
 
 pub type XGrid =
   Grid(String)
 
 pub fn parse(input: String) -> XGrid {
+  use <- pocket_watch.simple("parse")
   grid.from_string(input)
 }
 
 pub fn pt_1(grid: XGrid) {
+  use <- pocket_watch.simple("part 1")
   grid
   |> grid.map(fn(xy, _) { xmas_count(grid, xy) })
   |> grid.values
@@ -19,6 +22,7 @@ pub fn pt_1(grid: XGrid) {
 }
 
 pub fn pt_2(grid: XGrid) {
+  use <- pocket_watch.simple("part 2")
   grid
   |> grid.map(fn(xy, _) { x_mas_count(grid, xy) })
   |> grid.values

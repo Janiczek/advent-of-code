@@ -3,13 +3,16 @@ import gleam/int
 import gleam/list
 import gleam/set.{type Set}
 import grid.{type Grid, type XY}
+import pocket_watch
 
 pub fn parse(input: String) -> Grid(Int) {
+  use <- pocket_watch.simple("parse")
   grid.from_string(input)
   |> grid.map(fn(_, c) { extra.yolo_int(c) })
 }
 
 pub fn pt_1(input: Grid(Int)) {
+  use <- pocket_watch.simple("part 1")
   let starting_positions: List(XY) = grid.find_all_exact(input, 0)
   starting_positions
   |> list.map(trailheads_count(input, _))
@@ -17,6 +20,7 @@ pub fn pt_1(input: Grid(Int)) {
 }
 
 pub fn pt_2(input: Grid(Int)) {
+  use <- pocket_watch.simple("part 2")
   let starting_positions: List(XY) = grid.find_all_exact(input, 0)
   starting_positions
   |> list.map(trailheads_rating(input, _))

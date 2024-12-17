@@ -2,12 +2,14 @@ import extra
 import gleam/int
 import gleam/list
 import gleam/string
+import pocket_watch
 
 pub type Row {
   Row(result: Int, operands: List(Int))
 }
 
 pub fn parse(input: String) -> List(Row) {
+  use <- pocket_watch.simple("parse")
   string.split(input, "\n")
   |> list.map(fn(line) {
     case string.split(line, ": ") {
@@ -24,6 +26,7 @@ pub fn parse(input: String) -> List(Row) {
 }
 
 pub fn pt_1(input: List(Row)) {
+  use <- pocket_watch.simple("part 1")
   input
   |> list.filter(fn(row) { can_be_combined(row, [int.add, int.multiply]) })
   |> list.map(fn(row) { row.result })
@@ -31,6 +34,7 @@ pub fn pt_1(input: List(Row)) {
 }
 
 pub fn pt_2(input: List(Row)) {
+  use <- pocket_watch.simple("part 2")
   input
   |> list.filter(fn(row) {
     can_be_combined(row, [int.add, int.multiply, concat_digits])

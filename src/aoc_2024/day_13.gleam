@@ -1,16 +1,17 @@
 import extra
 import gleam/bool
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/string
 import grid.{type XY}
+import pocket_watch
 
 pub type Machine {
   Machine(a: XY, b: XY, prize: XY)
 }
 
 pub fn parse(input: String) -> List(Machine) {
+  use <- pocket_watch.simple("parse")
   input
   |> string.split("\n\n")
   |> list.map(parse_machine)
@@ -38,6 +39,7 @@ fn parse_machine(input: String) -> Machine {
 }
 
 pub fn pt_1(input: List(Machine)) {
+  use <- pocket_watch.simple("part 1")
   input
   |> list.map(solve_machine)
   |> int.sum
@@ -68,6 +70,7 @@ fn solve_machine(machine: Machine) -> Int {
 }
 
 pub fn pt_2(input: List(Machine)) {
+  use <- pocket_watch.simple("part 2")
   input
   |> list.map(fn(machine) {
     Machine(

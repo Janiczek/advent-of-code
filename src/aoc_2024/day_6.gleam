@@ -2,12 +2,14 @@ import extra
 import gleam/list
 import gleam/set.{type Set}
 import grid.{type Dir, type Grid, type XY}
+import pocket_watch
 
 pub type Input {
   Input(grid: Grid(Nil), guard_xy: XY)
 }
 
 pub fn parse(input: String) -> Input {
+  use <- pocket_watch.simple("parse")
   let g = grid.from_string(input)
   let assert Ok(guard_xy) = grid.find_exact(g, "^")
   Input(
@@ -22,6 +24,7 @@ pub fn parse(input: String) -> Input {
 }
 
 pub fn pt_1(input: Input) {
+  use <- pocket_watch.simple("part 1")
   pt_1_step(
     input.grid,
     set.from_list([input.guard_xy]),
@@ -44,6 +47,7 @@ fn pt_1_step(g: Grid(Nil), seen: Set(XY), current_xy: XY, dir: Dir) -> Set(XY) {
 }
 
 pub fn pt_2(input: Input) {
+  use <- pocket_watch.simple("part 2")
   let orig_path =
     pt_1_step(
       input.grid,

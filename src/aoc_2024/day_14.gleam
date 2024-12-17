@@ -4,13 +4,15 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/string
-import grid.{type XY, Dims}
+import grid.{type XY}
+import pocket_watch
 
 pub type Robot {
   Robot(p: XY, v: XY)
 }
 
 pub fn parse(input: String) -> List(Robot) {
+  use <- pocket_watch.simple("parse")
   input
   |> string.split("\n")
   |> list.map(parse_robot)
@@ -38,6 +40,7 @@ fn parse_robot(line: String) -> Robot {
 }
 
 pub fn pt_1(robots: List(Robot)) {
+  use <- pocket_watch.simple("part 1")
   robots
   |> step_times(100)
   |> io.debug
@@ -103,6 +106,7 @@ fn robots_in_quadrant(robots: List(Robot), q: XY) -> List(Robot) {
 }
 
 pub fn pt_2(robots: List(Robot)) {
+  use <- pocket_watch.simple("part 2")
   step_pt2(0, robots)
 }
 

@@ -4,6 +4,7 @@ import gleam/io
 import gleam/list
 import gleam/string
 import grid.{type Dir, type Grid, type XY}
+import pocket_watch
 
 pub type Input {
   Input(grid: Grid(Entity), robot: XY, moves: List(Dir))
@@ -15,6 +16,7 @@ pub type Entity {
 }
 
 pub fn parse(input: String) -> Input {
+  use <- pocket_watch.simple("parse")
   case string.split(input, "\n\n") {
     [map, moves] -> {
       let char_grid = grid.from_string(map)
@@ -50,6 +52,7 @@ pub fn parse(input: String) -> Input {
 }
 
 pub fn pt_1(input: Input) {
+  use <- pocket_watch.simple("part 1")
   input.moves
   |> list.fold(from: #(input.grid, input.robot), with: step)
   |> fn(state) { state.0 }
@@ -60,6 +63,7 @@ pub fn pt_1(input: Input) {
 }
 
 pub fn pt_2(input: Input) {
+  use <- pocket_watch.simple("part 2")
   let wider_grid = widen(input.grid)
   let wider_robot = grid.xy_mul(input.robot, #(2, 1))
   let #(final_grid, _) =
@@ -266,7 +270,7 @@ fn wider_step_find_nonbox(
                     frontmost_touches,
                     list.map(frontmost_touches, grid.get(grid, _)),
                   ))
-                  todo
+                  panic as "Unfinished case (not needed though)"
                 }
               }
             }

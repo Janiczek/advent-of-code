@@ -3,18 +3,22 @@ import gleam/int
 import gleam/list
 import gleam/set.{type Set}
 import grid.{type Grid, type XY}
+import pocket_watch
 
 pub fn parse(input: String) -> Grid(String) {
+  use <- pocket_watch.simple("parse")
   grid.from_string(input)
 }
 
 pub fn pt_1(input: Grid(String)) {
+  use <- pocket_watch.simple("part 1")
   grid.group_consecutive(input, grid.orthogonal_dirs)
   |> list.map(fn(kv) { area(kv.1) * perimeter(kv.1) })
   |> int.sum
 }
 
 pub fn pt_2(input: Grid(String)) {
+  use <- pocket_watch.simple("part 2")
   //io.println_error(grid.to_string(
   //  input,
   //  fun: fn(s) { #(s, Error(Nil)) },
@@ -55,7 +59,7 @@ pub fn pt_2(input: Grid(String)) {
   //  empty: ".",
   //))
 
-  list.map2(groups, distinguished_groups, fn(old, kv) {
+  list.map2(groups, distinguished_groups, fn(_, kv) {
     let area_ = area(kv.1)
     let sides_ = sides(fences, group_id: kv.0)
     let result = area_ * sides_

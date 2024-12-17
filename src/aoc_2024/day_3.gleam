@@ -3,6 +3,7 @@ import gleam/int
 import gleam/list
 import gleam/regexp
 import gleam/string
+import pocket_watch
 
 pub type Op {
   Mul(Int, Int)
@@ -26,6 +27,7 @@ fn from_match(match: regexp.Match) -> Op {
 }
 
 pub fn parse(input: String) -> List(Op) {
+  use <- pocket_watch.simple("parse")
   let assert Ok(regex) =
     regexp.from_string("mul\\(\\d+,\\d+\\)|do\\(\\)|don't\\(\\)")
 
@@ -35,6 +37,7 @@ pub fn parse(input: String) -> List(Op) {
 }
 
 pub fn pt_1(ops: List(Op)) {
+  use <- pocket_watch.simple("part 1")
   ops
   |> list.map(fn(op) {
     case op {
@@ -51,6 +54,7 @@ type State {
 }
 
 pub fn pt_2(ops: List(Op)) {
+  use <- pocket_watch.simple("part 2")
   let result =
     ops
     |> list.fold(State(0, True), fn(acc, op) {

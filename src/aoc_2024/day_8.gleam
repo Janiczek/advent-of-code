@@ -2,13 +2,16 @@ import gleam/dict
 import gleam/list
 import gleam/set
 import grid.{type Dims, type Grid, type XY}
+import pocket_watch
 
 pub fn parse(input: String) -> Grid(String) {
+  use <- pocket_watch.simple("parse")
   grid.from_string(input)
   |> grid.filter(fn(_, c) { c != "." })
 }
 
 pub fn pt_1(input: Grid(String)) {
+  use <- pocket_watch.simple("part 1")
   input
   |> grid.to_list
   |> list.group(by: fn(cell) { cell.1 })
@@ -32,6 +35,7 @@ fn antinodes_xy_pt1(pair: #(XY, XY)) -> List(XY) {
 }
 
 pub fn pt_2(input: Grid(String)) {
+  use <- pocket_watch.simple("part 2")
   input
   |> grid.to_list
   |> list.group(by: fn(cell) { cell.1 })

@@ -2,8 +2,10 @@ import extra
 import gleam/int
 import gleam/list
 import gleam/string
+import pocket_watch
 
 pub fn parse(input: String) -> List(List(Int)) {
+  use <- pocket_watch.simple("parse")
   input
   |> string.split("\n")
   |> list.map(fn(line) {
@@ -32,10 +34,12 @@ fn is_ok(line: List(Int)) {
 }
 
 pub fn pt_1(input: List(List(Int))) {
+  use <- pocket_watch.simple("part 1")
   list.count(input, is_ok)
 }
 
 pub fn pt_2(input: List(List(Int))) {
+  use <- pocket_watch.simple("part 2")
   input
   |> list.count(fn(line) {
     line

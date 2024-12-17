@@ -7,6 +7,7 @@ import gleam/order
 import gleam/result
 import gleam/set.{type Set}
 import gleam/string
+import pocket_watch
 
 pub type Rule {
   Rule(first: Int, then: Int)
@@ -17,6 +18,7 @@ pub type Input {
 }
 
 pub fn parse(input: String) -> Input {
+  use <- pocket_watch.simple("parse")
   case string.split(input, "\n\n") {
     [rules_str, manuals_str] -> {
       let rules =
@@ -73,6 +75,7 @@ fn middle_page(manual: List(Int)) -> Result(Int, Nil) {
 }
 
 pub fn pt_1(input: Input) {
+  use <- pocket_watch.simple("part 1")
   let dependents = get_dependents(input)
   input.manuals
   |> list.filter_map(fn(manual) {
@@ -99,6 +102,7 @@ fn fix_order(manual: List(Int), dependents: Dict(Int, Set(Int))) -> List(Int) {
 }
 
 pub fn pt_2(input: Input) {
+  use <- pocket_watch.simple("part 2")
   let dependents = get_dependents(input)
   input.manuals
   |> list.filter_map(fn(manual) {

@@ -5,11 +5,13 @@ import gleam/list
 import gleam/otp/task
 import gleam/result
 import gleam/string
+import pocket_watch
 
 pub type Input =
   #(List(Int), List(Int))
 
 pub fn parse(input: String) -> Input {
+  use <- pocket_watch.simple("parse")
   input
   |> string.split("\n")
   |> extra.pmap(string.split(_, "   "))
@@ -25,6 +27,7 @@ pub fn parse(input: String) -> Input {
 }
 
 pub fn pt_1(input: Input) {
+  use <- pocket_watch.simple("part 1")
   let sorted_xs_handle = task.async(fn() { list.sort(input.0, int.compare) })
   let sorted_ys_handle = task.async(fn() { list.sort(input.1, int.compare) })
   let sorted_xs = task.await_forever(sorted_xs_handle)
@@ -35,6 +38,7 @@ pub fn pt_1(input: Input) {
 }
 
 pub fn pt_2(input: Input) {
+  use <- pocket_watch.simple("part 2")
   let #(xs, ys) = input
   let freqs = extra.frequencies(ys)
 
