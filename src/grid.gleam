@@ -651,6 +651,10 @@ pub fn insert_all(grid: Grid(a), kvs: List(#(XY, a))) -> Grid(a) {
   list.fold(kvs, grid, fn(acc_grid, kv) { insert(acc_grid, kv.0, kv.1) })
 }
 
+pub fn set_all(grid: Grid(a), kvs: List(#(XY, a))) -> Grid(a) {
+  list.fold(kvs, grid, fn(acc_grid, kv) { set(acc_grid, kv.0, kv.1) })
+}
+
 pub fn rotate_cw(dir: Dir) -> Dir {
   case dir {
     Left -> Top
@@ -675,4 +679,15 @@ pub fn rotate_ccw(dir: Dir) -> Dir {
     Bottom -> Right
     BottomRight -> TopRight
   }
+}
+
+pub fn dims_of_size(width width: Int, height height: Int) -> Dims {
+  Dims(
+    width: width,
+    height: height,
+    min_x: 0,
+    max_x: width - 1,
+    min_y: 0,
+    max_y: height - 1,
+  )
 }
