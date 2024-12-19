@@ -1,8 +1,8 @@
 import gleam/bool
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/string
+import pocket_watch
 import rememo/memo
 
 pub type Input {
@@ -10,6 +10,7 @@ pub type Input {
 }
 
 pub fn parse(input: String) -> Input {
+  use <- pocket_watch.simple("parse")
   case string.split(input, "\n\n") {
     [towels_str, patterns_str] -> {
       Input(
@@ -22,6 +23,7 @@ pub fn parse(input: String) -> Input {
 }
 
 pub fn pt_1(input: Input) {
+  use <- pocket_watch.simple("part 1")
   input.patterns
   |> list.count(pt_1_possible(input.towels, _))
 }
@@ -51,6 +53,7 @@ fn pt_1_possible_aux(towels: List(String), todos: List(String)) -> Bool {
 }
 
 pub fn pt_2(input: Input) {
+  use <- pocket_watch.simple("part 2")
   use cache <- memo.create()
   input.patterns
   |> list.map(pt_2_all(input.towels, _, cache))
