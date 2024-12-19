@@ -348,7 +348,7 @@ pub fn shortest_path(
     seen: dict.new(),
     todos: priority_queue.from_list(
       [ShortestPathTodo(origin, [], 0)],
-      compare_todo,
+      compare_shortest_path_todo,
     ),
     neighbours: neighbours,
   )
@@ -402,7 +402,7 @@ fn shortest_path_aux(
   }
 }
 
-fn compare_todo(a: ShortestPathTodo, b: ShortestPathTodo) {
+fn compare_shortest_path_todo(a: ShortestPathTodo, b: ShortestPathTodo) {
   int.compare(a.steps_count, b.steps_count)
 }
 
@@ -689,5 +689,71 @@ pub fn dims_of_size(width width: Int, height height: Int) -> Dims {
     max_x: width - 1,
     min_y: 0,
     max_y: height - 1,
+  )
+}
+
+pub fn manhattan_distance(a: XY, b: XY) -> Int {
+  int.absolute_value(a.0 - b.0) + int.absolute_value(a.1 - b.1)
+}
+
+pub type AstarTodo {
+  AstarTodo(xy: XY, cost: Int)
+}
+
+fn compare_astar_todo(a: AstarTodo, b: AstarTodo) {
+  int.compare(a.cost, b.cost)
+}
+
+pub fn astar(
+  from from: XY,
+  to to: XY,
+  cost cost: fn(XY, XY) -> Int,
+  neighbours neighbours: fn(XY) -> List(XY),
+  print_progress print_progress: fn(XY, List(XY), Queue(AstarTodo)) -> Nil,
+) -> Result(Int, Nil) {
+  let frontier =
+    priority_queue.new(compare_astar_todo)
+    |> priority_queue.push(AstarTodo(from, 0))
+  let cost_so_far: Dict(XY, Int) = dict.from_list([#(from, 0)])
+  astar_aux(to, cost, neighbours, frontier, cost_so_far, print_progress)
+}
+
+fn astar_aux(
+  to goal: XY,
+  cost cost: fn(XY, XY) -> Int,
+  neighbours neighbours: fn(XY) -> List(XY),
+  frontier frontier: Queue(AstarTodo),
+  cost_so_far cost_so_far: Dict(XY, Int),
+  print_progress print_progress: fn(XY, List(XY), Queue(AstarTodo)) -> Nil,
+) -> Result(Int, Nil) {
+  use #(current, rest) <- result.try(priority_queue.pop(frontier))
+  use <- bool.guard(when: current.xy == goal, return: Ok(current.cost))
+  let nexts = neighbours(current.xy)
+  print_progress(current.xy, nexts, frontier)
+  let #(new_frontier, new_cost_so_far) =
+    list.fold(over: nexts, from: #(rest, cost_so_far), with: fn(acc, next) {
+      let #(acc_frontier, acc_cost_so_far) = acc
+      let assert Ok(current_cost) = dict.get(acc_cost_so_far, current.xy)
+      let new_next_cost = current_cost + cost(current.xy, next)
+      case dict.get(acc_cost_so_far, next) {
+        Ok(old_next_cost) if old_next_cost <= new_next_cost -> acc
+        _ -> {
+          let new_cost_so_far =
+            dict.insert(acc_cost_so_far, next, new_next_cost)
+          let priority = new_next_cost + manhattan_distance(next, goal)
+          let new_frontier =
+            acc_frontier
+            |> priority_queue.push(AstarTodo(xy: next, cost: priority))
+          #(new_frontier, new_cost_so_far)
+        }
+      }
+    })
+  astar_aux(
+    goal,
+    cost,
+    neighbours,
+    new_frontier,
+    new_cost_so_far,
+    print_progress,
   )
 }
