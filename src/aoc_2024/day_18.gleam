@@ -4,8 +4,10 @@ import gleam/list
 import gleam/result
 import gleam/string
 import grid.{type Dims, type XY, Grid}
+import pocket_watch
 
 pub fn parse(input: String) -> List(XY) {
+  use <- pocket_watch.simple("parse")
   input
   |> string.split("\n")
   |> list.map(fn(line) {
@@ -20,6 +22,7 @@ pub fn parse(input: String) -> List(XY) {
 const size = 71
 
 pub fn pt_1(input: List(XY)) -> Int {
+  use <- pocket_watch.simple("part 1")
   let board = grid.dims_of_size(width: size, height: size)
   let taken = 1024
   let assert Ok(cost) = attempt(input, board, taken)
@@ -27,6 +30,7 @@ pub fn pt_1(input: List(XY)) -> Int {
 }
 
 pub fn pt_2(input: List(XY)) {
+  use <- pocket_watch.simple("part 2")
   let board = grid.dims_of_size(width: size, height: size)
   pt_2_loop(input, board, 1025)
 }

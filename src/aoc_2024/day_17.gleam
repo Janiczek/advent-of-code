@@ -1,10 +1,9 @@
 import extra
+import gleam/bool
 import gleam/dict.{type Dict}
-import gleam/float
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/order
 import gleam/string
 import pocket_watch
 
@@ -100,30 +99,14 @@ fn parse_op(input: Int) -> Op {
 
 pub fn pt_1(input: Input) {
   use <- pocket_watch.simple("part 1")
-  io.debug(input)
-  let out = step(input, 0, [])
-  io.println_error(
-    out
-    |> list.map(int.to_string)
-    |> string.join(","),
-  )
-  out
-}
 
-pub fn pt_2(input: Input) {
-  use <- pocket_watch.simple("part 2")
-  let wanted_out =
-    input.mem
-    |> dict.to_list
-    |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
-    |> list.map(fn(kv) { kv.1 })
-  let wanted_length = list.length(wanted_out)
-  find_out(wanted_out, wanted_length, input, 1)
+  step(input, 0, [])
+  |> list.reverse
 }
 
 fn step(input: Input, ip: Int, out_rev: List(Int)) {
   case dict.get(input.mem, ip) {
-    Error(Nil) -> list.reverse(out_rev)
+    Error(Nil) -> out_rev
     Ok(n) -> {
       let op = parse_op(n)
       case op {
@@ -189,7 +172,7 @@ fn out(input: Input, ip: Int, out_rev: List(Int)) {
 
 fn division(input: Input, ip: Int, out_rev: List(Int), reg: Reg) {
   let num = input.reg_a
-  let den = power_of_2(combo(input, ip + 1))
+  let den = extra.pow(2, combo(input, ip + 1))
   let result = num / den
   let new_input = write_to_reg(input, reg, result)
   step(new_input, ip + 2, out_rev)
@@ -225,28 +208,77 @@ fn write_to_reg(input: Input, reg: Reg, value: Int) -> Input {
   }
 }
 
-fn power_of_2(n: Int) -> Int {
-  let assert Ok(result) = int.power(2, int.to_float(n))
-  float.truncate(result)
+pub fn pt_2(input: Input) {
+  use <- pocket_watch.simple("part 2")
+  let wanted_out =
+    input.mem
+    |> dict.to_list
+    |> list.sort(fn(a, b) { int.compare(a.0, b.0) })
+    |> list.map(fn(kv) { kv.1 })
+  let wanted_out_rev = list.reverse(wanted_out)
+  find_out(
+    wanted_out_rev,
+    list.length(wanted_out_rev),
+    input,
+    // 1
+    1_074_137_000_837_131,
+    // pow(8,11)
+    1,
+    0,
+    0,
+  )
 }
 
-fn find_out(wanted_out: List(Int), wanted_length: Int, input: Input, i: Int) {
-  let actual_out = step(Input(..input, reg_a: i), 0, [])
-  let actual_length = list.length(actual_out)
-  case int.compare(actual_length, wanted_length) {
-    order.Lt -> {
-      io.debug(#("order", i, "up", actual_length))
-      find_out(wanted_out, wanted_length, input, i * 8)
+fn find_out(
+  wanted_out_rev: List(Int),
+  wanted_out_len: Int,
+  input: Input,
+  i: Int,
+  d: Int,
+  best_i: Int,
+  best_match: Int,
+) {
+  let actual_out_rev = step(Input(..input, reg_a: i), 0, [])
+  let actual_out_len = list.length(actual_out_rev)
+  use <- bool.guard(when: wanted_out_rev == actual_out_rev, return: i)
+  case wanted_out_len == actual_out_len {
+    False ->
+      find_out(
+        wanted_out_rev,
+        wanted_out_len,
+        input,
+        i + d,
+        d,
+        best_i,
+        best_match,
+      )
+    True -> {
+      let matches = matching_out(wanted_out_rev, actual_out_rev, 0)
+      case matches > best_match {
+        True -> {
+          io.println(
+            string.inspect(#("Found new best", i, matches, actual_out_rev)),
+          )
+          find_out(wanted_out_rev, wanted_out_len, input, i + d, d, i, matches)
+        }
+        False ->
+          find_out(
+            wanted_out_rev,
+            wanted_out_len,
+            input,
+            i + d,
+            d,
+            best_i,
+            best_match,
+          )
+      }
     }
-    order.Eq -> {
-      let actual_rev = list.reverse(actual_out)
-      let wanted_rev = list.reverse(wanted_out)
-      io.debug(#("same", actual_rev, wanted_rev, i))
-      todo as "estimate the order of magnitude to move by (8^some_i)"
-    }
-    order.Gt -> {
-      io.debug(#("order", i, "down", actual_length))
-      find_out(wanted_out, wanted_length, input, i / 8)
-    }
+  }
+}
+
+fn matching_out(xs: List(Int), ys: List(Int), acc: Int) {
+  case xs, ys {
+    [x, ..xs_], [y, ..ys_] if x == y -> matching_out(xs_, ys_, acc + 1)
+    _, _ -> acc
   }
 }

@@ -1,4 +1,5 @@
 import gleam/dict.{type Dict}
+import gleam/float
 import gleam/int
 import gleam/io
 import gleam/list
@@ -107,4 +108,9 @@ pub fn string_set(str: String, at: Int, value: String) -> String {
     }
   })
   |> string.join("")
+}
+
+pub fn pow(b: Int, e: Int) -> Int {
+  let assert Ok(x) = int.power(b, int.to_float(e))
+  float.truncate(x)
 }
