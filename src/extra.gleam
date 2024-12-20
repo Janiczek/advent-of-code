@@ -6,6 +6,7 @@ import gleam/list
 import gleam/option
 import gleam/otp/task
 import gleam/string
+import gleam/yielder.{type Yielder}
 
 /// Needs the operation to be associative and there to be a zero (monoid).
 /// Uses parallelism under the hood.
@@ -113,4 +114,15 @@ pub fn string_set(str: String, at: Int, value: String) -> String {
 pub fn pow(b: Int, e: Int) -> Int {
   let assert Ok(x) = int.power(b, int.to_float(e))
   float.truncate(x)
+}
+
+pub fn yield_combination_pairs(items: Yielder(a)) -> Yielder(#(a, a)) {
+  case yielder.step(items) {
+    yielder.Done -> yielder.empty()
+    yielder.Next(x, acc) ->
+      yielder.append(
+        yielder.map(acc, fn(y) { #(x, y) }),
+        yield_combination_pairs(acc),
+      )
+  }
 }

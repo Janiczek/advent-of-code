@@ -571,6 +571,10 @@ pub fn count(grid: Grid(a), pred: fn(XY, a) -> Bool) -> Int {
   |> dict.size
 }
 
+pub fn count_exact(grid: Grid(a), a: a) -> Int {
+  count(grid, fn(_, x) { x == a })
+}
+
 pub fn extend_edge(grid: Grid(a), with value: a) -> Grid(a) {
   //        #####
   // 111    #111#
@@ -711,6 +715,17 @@ pub fn astar(
   neighbours neighbours: fn(XY) -> List(XY),
   print_progress print_progress: fn(XY, List(XY), Queue(AstarTodo)) -> Nil,
 ) -> Result(Int, Nil) {
+  astar_with_bests(from, to, cost, neighbours, print_progress)
+  |> result.map(fn(pair) { pair.0 })
+}
+
+pub fn astar_with_bests(
+  from from: XY,
+  to to: XY,
+  cost cost: fn(XY, XY) -> Int,
+  neighbours neighbours: fn(XY) -> List(XY),
+  print_progress print_progress: fn(XY, List(XY), Queue(AstarTodo)) -> Nil,
+) -> Result(#(Int, Dict(XY, Int)), Nil) {
   let frontier =
     priority_queue.new(compare_astar_todo)
     |> priority_queue.push(AstarTodo(from, 0))
@@ -725,9 +740,12 @@ fn astar_aux(
   frontier frontier: Queue(AstarTodo),
   cost_so_far cost_so_far: Dict(XY, Int),
   print_progress print_progress: fn(XY, List(XY), Queue(AstarTodo)) -> Nil,
-) -> Result(Int, Nil) {
+) -> Result(#(Int, Dict(XY, Int)), Nil) {
   use #(current, rest) <- result.try(priority_queue.pop(frontier))
-  use <- bool.guard(when: current.xy == goal, return: Ok(current.cost))
+  use <- bool.guard(
+    when: current.xy == goal,
+    return: Ok(#(current.cost, cost_so_far)),
+  )
   let nexts = neighbours(current.xy)
   print_progress(current.xy, nexts, frontier)
   let #(new_frontier, new_cost_so_far) =
