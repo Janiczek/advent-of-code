@@ -126,3 +126,8 @@ pub fn yield_combination_pairs(items: Yielder(a)) -> Yielder(#(a, a)) {
       )
   }
 }
+
+pub fn yolo(r: Result(a, b)) -> a {
+  let assert Ok(a) = r
+  a
+}

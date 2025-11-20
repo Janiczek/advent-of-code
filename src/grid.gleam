@@ -101,8 +101,8 @@ pub fn from_string(input: String) -> Grid(String) {
     })
     |> list.flatten
     |> dict.from_list
-  let width = list.length(rows)
-  let height =
+  let height = list.length(rows)
+  let width =
     rows
     |> list.first
     |> result.map(string.to_graphemes)
@@ -404,6 +404,77 @@ fn shortest_path_aux(
 
 fn compare_shortest_path_todo(a: ShortestPathTodo, b: ShortestPathTodo) {
   int.compare(a.steps_count, b.steps_count)
+}
+
+pub fn all_shortest_paths(
+  from origin: XY,
+  to goal: XY,
+  neighbours neighbours: fn(XY) -> List(XY),
+) -> Result(List(List(XY)), Nil) {
+  all_shortest_paths_aux(
+    goal: goal,
+    seen: dict.new(),
+    todos: priority_queue.from_list(
+      [ShortestPathTodo(origin, [], 0)],
+      compare_shortest_path_todo,
+    ),
+    neighbours: neighbours,
+    found: [],
+  )
+}
+
+fn all_shortest_paths_aux(
+  goal goal: XY,
+  seen seen: Dict(XY, Int),
+  todos todos: Queue(ShortestPathTodo),
+  neighbours neighbours: fn(XY) -> List(XY),
+  found found: List(List(XY)),
+) -> Result(List(List(XY)), Nil) {
+  case priority_queue.pop(todos) {
+    Error(Nil) ->
+      case found {
+        [] -> Error(Nil)
+        _ -> Ok(found)
+      }
+    Ok(#(todo_, rest_of_todos)) -> {
+      case todo_.current == goal {
+        True ->
+          all_shortest_paths_aux(goal, seen, rest_of_todos, neighbours, [
+            list.reverse(todo_.steps_rev),
+            ..found
+          ])
+        False -> {
+          // We're guaranteed by filtering from previous steps that this path will be the best seen for the XY:
+          let new_seen = dict.insert(seen, todo_.current, todo_.steps_count)
+          let new_neighbours =
+            neighbours(todo_.current)
+            |> list.filter(fn(neighbour) {
+              case dict.get(seen, neighbour) {
+                Error(Nil) -> True
+                Ok(previously_best_count) ->
+                  previously_best_count > todo_.steps_count + 1
+              }
+            })
+          let added_todos =
+            new_neighbours
+            |> list.map(fn(neighbour) {
+              ShortestPathTodo(
+                current: neighbour,
+                steps_rev: [neighbour, ..todo_.steps_rev],
+                steps_count: todo_.steps_count + 1,
+              )
+            })
+          let new_todos =
+            list.fold(
+              over: added_todos,
+              from: rest_of_todos,
+              with: priority_queue.push,
+            )
+          all_shortest_paths_aux(goal, new_seen, new_todos, neighbours, found)
+        }
+      }
+    }
+  }
 }
 
 /// TODO: doesn't do anything about the data outside the new dims.
