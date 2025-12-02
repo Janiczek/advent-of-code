@@ -8,9 +8,8 @@ BEGIN { FS="-"; RS="," }
     s = int(i i)
     lens = 2 * leni
 
-    if (s >= from && s <= to) {
+    if (s >= from && s <= to)
       sum1 += s
-    }
 
     if (!(s in seen) && s >= from && s <= to) {
       sum2 += s
