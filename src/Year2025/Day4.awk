@@ -1,3 +1,4 @@
+BEGIN {global max_x,max_y}
 { 
   y = NR
   for (x = 1; x <= length($0); x++) {
@@ -8,12 +9,16 @@
 END {
   max_x = x-1
   max_y = y
-  for (k in grid) {
-    [x,y] = split(SUBSEP,k)
-    if (p1_ok(x,y,grid)) c++
-    print(x,y,grid[k],p1_ok(x,y,grid))
+  for (y=1;y<=max_y;y++) {
+    for (x=1;x<=max_x;x++) {
+      c = grid[x,y]
+      #p = c == "@" ? (p1_ok(x,y,grid) ? "x" : "@") : "."
+      #printf(p)
+      if (p1_ok(x,y,grid)) p1++
+    }
+    #print()
   }
-  print("p1: " c)
+  print("p1:",p1)
 }
 function p1_ok(x,y,grid) {
   if (grid[x,y] == ".") return 0
