@@ -9,16 +9,33 @@ BEGIN {global max_x,max_y}
 END {
   max_x = x-1
   max_y = y
-  for (y=1;y<=max_y;y++) {
-    for (x=1;x<=max_x;x++) {
-      c = grid[x,y]
-      #p = c == "@" ? (p1_ok(x,y,grid) ? "x" : "@") : "."
-      #printf(p)
-      if (p1_ok(x,y,grid)) p1++
+  first = 0
+
+  do {
+    p1 = 0
+    p1_set = []
+    for (y=1;y<=max_y;y++) {
+      for (x=1;x<=max_x;x++) {
+        c = grid[x,y]
+        #p = c == "@" ? (p1_ok(x,y,grid) ? "x" : "@") : "."
+        #printf(p)
+        if (p1_ok(x,y,grid)) {
+          p1++
+          p1_set[x,y] = 1
+        }
+      }
+      #print()
     }
-    #print()
-  }
-  print("p1:",p1)
+    if (!first) {
+      print("p1:",p1)
+      first = 1
+    }
+    p2 += p1
+    for (k in p1_set) {
+      grid[k] = "."
+    }
+  } while (p1 > 0)
+  print("p2:",p2)
 }
 function p1_ok(x,y,grid) {
   if (grid[x,y] == ".") return 0
