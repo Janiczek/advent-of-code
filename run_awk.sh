@@ -3,7 +3,12 @@
 YEAR="${1}"
 DAY="${2}"
 CODE="src/Year${YEAR}/Day${DAY}.awk"
+if [ -n "$EXAMPLE" ]; then
+INPUT="input/${YEAR}/${DAY}.example.txt"
+else
 INPUT="input/${YEAR}/${DAY}.txt"
+fi
+
 
 COLOR_OFF="\e[0m"
 DIM="\e[2m"
