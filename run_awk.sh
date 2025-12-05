@@ -3,7 +3,8 @@
 YEAR="${1}"
 DAY="${2}"
 CODE="src/Year${YEAR}/Day${DAY}.awk"
-if [ -n "$EXAMPLE" ]; then
+EXAMPLE="${EXAMPLE:-0}"
+if [ "$EXAMPLE" -eq 1 ]; then
 INPUT="input/${YEAR}/${DAY}.example.txt"
 else
 INPUT="input/${YEAR}/${DAY}.txt"
