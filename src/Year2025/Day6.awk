@@ -1,4 +1,4 @@
-BEGIN { global digits; digits = 3 } # TODO 4 for the real input
+BEGIN { global digits; digits = ENVIRON["EXAMPLE"] == "1" ? 3 : 4 }
 /[+*]/ { op_row = 1 }
 op_row == 0 {
   input[NR] = $0
@@ -29,7 +29,14 @@ op_row == 1 {
     problem2[col] = problem1[col]
       |> map(pad)
       |> transpose()
+      |> map((arr) => {
+        arr
+        |> gsub("Z","")
+        |> int()
+      })
       |> filter((x) => { x > 0 })
+    x = problem1[col] |> map(pad)
+    y = problem1[col] |> map(pad) |> transpose()
   }
   # Actual calculation
   for (col = 1; col <= NF; col++) {
@@ -47,22 +54,13 @@ function pad_left(n)  { return repeat("Z",digits-length(str(n))) n }
 function pad_right(n) { return n repeat("Z",digits-length(str(n))) }
 function repeat(c,n) { n > 0 ? c repeat(c,n-1) : "" }
 function is_empty(arr) { arr == [] }
-function transpose(strs) { # Expects same length (col count) in all strings (rows)
+function transpose(strs) {
+  # Expects same length (col count) in all strings (rows)
   len = length(strs[1])
   return range(1,len)
     |> map((col) => {
       strs
         |> map((str) => {str[col]})
         |> reduce(concat, "")
-        |> gsub("Z","")
-        |> int()
     })
 }
-# TODO fawk lang: switch is broken
-# TODO fawk lang: pipeline not allowed inside print()
-# TODO fawk lang: allow newline before a pipeline expr (x = \n foo |> bar)
-# TODO fawk lang: expr lambdas drop { }: (x) => x + 1
-# TODO fawk lang: wrong error when using unknown function in a pipeline
-# TODO fawk lang: globals with init value
-# TODO fawk lang: regex literals for use in gsub etc.?
-# TODO fawk lang: print inside pipeline - return the result unchanged but let pipelining work, eg. x |> print("x") --> print("x",x)
