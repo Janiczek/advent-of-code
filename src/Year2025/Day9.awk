@@ -3,19 +3,17 @@ BEGIN { FS="," }
 END {
   maxr = -1
   maxarea = -1
-  r = r |> sort()
+  rs = r |> sort()
   for (i = 1; i <= NR/2; i++) {
-    [ax,ay] = r[i]
     for (j = NR; j >= NR/2; j--) {
-      [bx,by] = r[j]
-      a = area(ax,ay,bx,by)
+      a = area(rs[i],rs[j])
       if (a > maxarea) {
-        maxr = [[ax,ay],[bx,by]]
+        maxr = [rs[i],rs[j]]
         maxarea = a
       }
     }
   }
-  print(maxarea)
+  print("p1",maxarea)
 }
-function area(ax,ay,bx,by) { return (abs(bx-ax)+1) * (abs(by-ay)+1) }
+function area(p1,p2) { return (abs(p1[1]-p2[1])+1) * (abs(p1[2]-p2[2])+1) }
 # TODO destructuring in function args
