@@ -7,4 +7,5 @@ requires-python = ">=3.14"
 dependencies = [
     "numpy>=2.3.5",
     "scipy>=1.16.3",
+    "svg-py>=1.9.2",
 ]
